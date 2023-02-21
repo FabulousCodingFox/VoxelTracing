@@ -343,7 +343,7 @@ public class Renderer {
     }
 
     public Matrix4f getProjectionMatrix() {
-        return new Matrix4f().perspective((float) Math.toRadians(70), windowWidth/windowHeight, 0.1f, Integer.MAX_VALUE);
+        return new Matrix4f().perspective((float) Math.toRadians(70), (float)windowWidth/(float)windowHeight, 0.1f, Integer.MAX_VALUE);
     }
 
     public double getMouseMoveX(){
