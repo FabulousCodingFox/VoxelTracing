@@ -34,7 +34,7 @@ public class Renderer {
     private int FRAMEBUFFER_COLORBUFFER;
     private int FRAMEBUFFER_RENDERBUFFER1;
 
-    private final Shader SHADER_GRID_DEBUG, SHADER_POST_DEBUG;
+    private final Shader SHADER_GRID, SHADER_POST;
 
     private int VAO_WORLD;
     private int vaosize;
@@ -141,6 +141,8 @@ public class Renderer {
 
         GL.createCapabilities();
 
+        glEnable(GL_TEXTURE_3D);
+
         float[] quadVertices = {
                 -1.0f,  1.0f,
                 -1.0f, -1.0f,
@@ -184,12 +186,12 @@ public class Renderer {
 
         System.out.println("Initializing Shaders...");
         System.out.println("SHADER_GRID_DEBUG");
-        SHADER_GRID_DEBUG = new Shader(
+        SHADER_GRID = new Shader(
                 "shader/debug/SHADER_GRID_DEBUG.vert",
                 "shader/debug/SHADER_GRID_DEBUG.frag"
         );
         System.out.println("SHADER_POST_DEBUG");
-        SHADER_POST_DEBUG = new Shader(
+        SHADER_POST = new Shader(
                 "shader/debug/SHADER_POST_DEBUG.vert",
                 "shader/debug/SHADER_POST_DEBUG.frag"
         );
@@ -266,6 +268,7 @@ public class Renderer {
         glEnableVertexAttribArray(1); // UV
         VBO_WORLD.add(v);
 
+        Texture3D voxelData = new Texture3D("models/debug", 2);
     }
 
     public boolean shouldClose(){
@@ -292,10 +295,10 @@ public class Renderer {
 
         viewMatrix = getViewMatrix(position, direction);
 
-        SHADER_GRID_DEBUG.use();
-        SHADER_GRID_DEBUG.setMatrix4f("projection", projectionMatrix);
-        SHADER_GRID_DEBUG.setMatrix4f("view", viewMatrix);
-        SHADER_GRID_DEBUG.setMatrix4f("model", modelMatrix);
+        SHADER_GRID.use();
+        SHADER_GRID.setMatrix4f("projection", projectionMatrix);
+        SHADER_GRID.setMatrix4f("view", viewMatrix);
+        SHADER_GRID.setMatrix4f("model", modelMatrix);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
         glDrawArrays(GL_TRIANGLES, 0, vaosize);
@@ -313,8 +316,8 @@ public class Renderer {
 
             //glPolygonMode(GL_FRONT_FACE, GL_LINE);
 
-            SHADER_POST_DEBUG.use();
-            SHADER_POST_DEBUG.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
+            SHADER_POST.use();
+            SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
             glBindVertexArray(VAO_POST);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
