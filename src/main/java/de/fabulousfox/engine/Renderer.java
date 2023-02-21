@@ -136,9 +136,6 @@ public class Renderer {
 
         GL.createCapabilities();
 
-        VAO_WORLD = glGenVertexArrays();
-        glBindVertexArray(VAO_WORLD);
-
         float[] quadVertices = {
                 -1.0f,  1.0f,  0.0f, 1.0f,
                 -1.0f, -1.0f,  0.0f, 0.0f,
@@ -206,7 +203,65 @@ public class Renderer {
 
         System.out.println("Initializing World...");
 
-        //TODO: Initialize World
+        float vertices[] = {
+                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+                0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+        };
+
+        VAO_WORLD = glGenVertexArrays();
+        glBindVertexArray(VAO_WORLD);
+
+        VBO_WORLD = new ArrayList<>();
+        int v = glGenBuffers();
+        //   4   8   12  16  20  24    28
+        //   X   Y   Z   U   V   TEXID AO
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 20, 0);
+        glEnableVertexAttribArray(0); // Position
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 20, 12);
+        glEnableVertexAttribArray(1); // UV
+        glBindBuffer(GL_ARRAY_BUFFER, v);
+        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        VBO_WORLD.add(v);
 
     }
 
@@ -238,15 +293,7 @@ public class Renderer {
         SHADER_GRID_DEBUG.setMatrix4f("view", viewMatrix);
         SHADER_GRID_DEBUG.setMatrix4f("model", modelMatrix);
 
-
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
-        //   4   8   12  16  20  24    28
-        //   X   Y   Z   U   V   TEXID AO
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 20, 0);
-        glEnableVertexAttribArray(0); // Position
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 20, 12);
-        glEnableVertexAttribArray(1); // UV
-
         glDrawArrays(GL_TRIANGLES, 0, Integer.MAX_VALUE);
 
 
@@ -257,6 +304,8 @@ public class Renderer {
         glDisable(GL_DEPTH_TEST);
         glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        //glPolygonMode(GL_FRONT_FACE, GL_LINE);
 
         SHADER_POST_DEBUG.use();
         SHADER_POST_DEBUG.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
