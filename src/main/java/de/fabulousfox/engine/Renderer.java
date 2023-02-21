@@ -37,6 +37,7 @@ public class Renderer {
     private final Shader SHADER_GRID_DEBUG, SHADER_POST_DEBUG;
 
     private int VAO_WORLD;
+    private int vaosize;
     private ArrayList<Integer> VBO_WORLD;
 
     private int VAO_POST;
@@ -63,6 +64,10 @@ public class Renderer {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         window = glfwCreateWindow(windowWidth, windowHeight, windowTitle, NULL, NULL);
         glfwMakeContextCurrent(window);
 
@@ -82,7 +87,7 @@ public class Renderer {
             this.windowWidth = width;
             this.windowHeight = height;
             glViewport(0, 0, width, height);
-            projectionMatrix = getProjectionMatrix(this.windowWidth, this.windowHeight, 60, 100);
+            projectionMatrix = getProjectionMatrix();
 
             // Resize Framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
@@ -193,7 +198,7 @@ public class Renderer {
 
         System.out.println("Initializing Matrix...");
 
-        projectionMatrix = getProjectionMatrix(windowWidth, windowHeight, 60, 100);
+        projectionMatrix = getProjectionMatrix();
         modelMatrix = new Matrix4f();
         viewMatrix = getViewMatrix(new Vector3f(0,0,0), new Vector3f(0,0,1));
 
@@ -201,7 +206,7 @@ public class Renderer {
 
         System.out.println("Initializing World...");
 
-        float vertices[] = {
+        float[] vertices = {
                 -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
                 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
@@ -245,20 +250,20 @@ public class Renderer {
                 -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
         };
 
+        vaosize = vertices.length / 5;
         VAO_WORLD = glGenVertexArrays();
         glBindVertexArray(VAO_WORLD);
 
         VBO_WORLD = new ArrayList<>();
         int v = glGenBuffers();
-        //   4   8   12  16  20  24    28
-        //   X   Y   Z   U   V   TEXID AO
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 20, 0);
-        glEnableVertexAttribArray(0); // Position
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 20, 12);
-        glEnableVertexAttribArray(1); // UV
+        //   4   8   12  16  20
+        //   X   Y   Z   U   V
         glBindBuffer(GL_ARRAY_BUFFER, v);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+2)*4, 0);
+        glEnableVertexAttribArray(0); // Position
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, (3+2)*4, 4*3);
+        glEnableVertexAttribArray(1); // UV
         VBO_WORLD.add(v);
 
     }
@@ -269,6 +274,7 @@ public class Renderer {
 
     public void render(Vector3f position, Vector3f direction){
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        final boolean FRAMEBUFFFER = false;
 
         float currentFrame = (float) glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -277,7 +283,7 @@ public class Renderer {
         // First Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
+        if(FRAMEBUFFFER) glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -292,26 +298,29 @@ public class Renderer {
         SHADER_GRID_DEBUG.setMatrix4f("model", modelMatrix);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
-        glDrawArrays(GL_TRIANGLES, 0, Integer.MAX_VALUE);
+        glDrawArrays(GL_TRIANGLES, 0, vaosize);
 
 
         // Second Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-        glDisable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        if(FRAMEBUFFFER) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
-        //glPolygonMode(GL_FRONT_FACE, GL_LINE);
+            glDisable(GL_DEPTH_TEST);
+            glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
 
-        SHADER_POST_DEBUG.use();
-        SHADER_POST_DEBUG.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-        glBindVertexArray(VAO_POST);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
+            //glPolygonMode(GL_FRONT_FACE, GL_LINE);
+
+            SHADER_POST_DEBUG.use();
+            SHADER_POST_DEBUG.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
+            glBindVertexArray(VAO_POST);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
+        }
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         double[] a = new double[1];
@@ -333,8 +342,8 @@ public class Renderer {
         return new Matrix4f().lookAt(position, new Vector3f(position).add(front), up);
     }
 
-    public Matrix4f getProjectionMatrix(float width, float height, float fov, float viewdistance) {
-        return new Matrix4f().perspective((float) Math.toRadians(fov), width/height, 0.1f, viewdistance);
+    public Matrix4f getProjectionMatrix() {
+        return new Matrix4f().perspective((float) Math.toRadians(70), windowWidth/windowHeight, 0.1f, Integer.MAX_VALUE);
     }
 
     public double getMouseMoveX(){
@@ -358,10 +367,7 @@ public class Renderer {
         if(key == Key.WALK_BACKWARD) return glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
         if(key == Key.WALK_LEFT) return glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
         if(key == Key.WALK_RIGHT) return glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
-        if(key == Key.SPRINT) return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-        if(key == Key.CROUCH) return glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
-        if(key == Key.TERMINAL) return glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
-        if(key == Key.ENTER) return glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+        if(key == Key.CROUCH) return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
         if(key == Key.JUMP) return glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
         return false;
     }

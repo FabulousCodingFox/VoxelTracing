@@ -4,35 +4,26 @@ import de.fabulousfox.engine.Key;
 import de.fabulousfox.engine.Renderer;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
-import java.util.stream.Collectors;
-
 public class Client {
     private final Renderer engine;
 
-    private Vector3f playerPosition, playerLookAt, playerPrevPosition;
+    private Vector3f playerPosition, playerLookAt;
     private double yaw, pitch;
 
     private final float playerWalkSpeed, playerTurnSpeed;
 
-    private Vector3f dir;
-
     public final Vector3f worldUp = new Vector3f(0,1,0);
 
     public Client(){
-        engine = new Renderer(1280,960, "Voxel Renderer");
+        this.engine = new Renderer(1280,960, "Voxel Renderer");
 
-        playerPosition = new Vector3f(0.5f, 0, 0.5f);
-        playerPrevPosition = new Vector3f(0.5f, 0, 0.5f);
-        playerLookAt = new Vector3f(0, 0, 1);
-        yaw = 0d;
-        pitch = 0d;
+        this.playerPosition = new Vector3f(0, 0, 0);
+        this.playerLookAt = new Vector3f(0, 0, -1);
+        this.yaw = 0d;
+        this.pitch = 0d;
 
-        playerWalkSpeed = 2f;
-        playerTurnSpeed = 25f;
-
-        dir = new Vector3f(0, 0, 0);
+        this.playerWalkSpeed = 2f;
+        this.playerTurnSpeed = 25f;
 
         renderer();
     }
@@ -81,15 +72,14 @@ public class Client {
 
             Vector3f ns = new Vector3f(playerLookAt.x, 0, playerLookAt.z).mul(keyWalkForward?1:(keyWalkBackward?-1:0));
             Vector3f ow = new Vector3f(playerLookAt.x, 0, playerLookAt.z).cross(worldUp).mul(keyWalkRight?0.5f:(keyWalkLeft?-0.5f:0));
-            dir = ns.add(ow).normalize().mul(multiplier);
-            playerPosition.add(dir);
+            Vector3f ud = new Vector3f(0, 1, 0).mul(keyJump?1:(keyCrouch?-1:0));
+
+            Vector3f dir = ns.add(ow).add(ud).normalize().mul(multiplier);
+            if(dir.isFinite()) playerPosition = playerPosition.add(dir);
 
             // Render Queue
-            running = engine.shouldClose();
-            engine.render(
-                    playerPosition,
-                    playerLookAt
-            );
+            running = !engine.shouldClose();
+            engine.render(new Vector3f(playerPosition), new Vector3f(playerLookAt));
         }
     }
 
