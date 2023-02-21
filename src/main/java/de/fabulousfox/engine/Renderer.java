@@ -39,6 +39,7 @@ public class Renderer {
     private int VAO_WORLD;
     private int vaosize;
     private ArrayList<Integer> VBO_WORLD;
+    private ArrayList<Texture3D> TEX_WORLD;
 
     private int VAO_POST;
     private int VBO_POST;
@@ -257,9 +258,9 @@ public class Renderer {
         glBindVertexArray(VAO_WORLD);
 
         VBO_WORLD = new ArrayList<>();
+        TEX_WORLD = new ArrayList<>();
+
         int v = glGenBuffers();
-        //   4   8   12  16  20
-        //   X   Y   Z   U   V
         glBindBuffer(GL_ARRAY_BUFFER, v);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+2)*4, 0);
@@ -267,8 +268,7 @@ public class Renderer {
         glVertexAttribPointer(1, 2, GL_FLOAT, false, (3+2)*4, 4*3);
         glEnableVertexAttribArray(1); // UV
         VBO_WORLD.add(v);
-
-        Texture3D voxelData = new Texture3D("models/debug", 2);
+        TEX_WORLD.add(new Texture3D("models/debug", 2));
     }
 
     public boolean shouldClose(){
@@ -299,6 +299,7 @@ public class Renderer {
         SHADER_GRID.setMatrix4f("projection", projectionMatrix);
         SHADER_GRID.setMatrix4f("view", viewMatrix);
         SHADER_GRID.setMatrix4f("model", modelMatrix);
+        SHADER_GRID.setInt("dataContainer", 2);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
         glDrawArrays(GL_TRIANGLES, 0, vaosize);
