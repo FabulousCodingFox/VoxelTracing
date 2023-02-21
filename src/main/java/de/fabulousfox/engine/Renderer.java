@@ -137,12 +137,12 @@ public class Renderer {
         GL.createCapabilities();
 
         float[] quadVertices = {
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                -1.0f, -1.0f,  0.0f, 0.0f,
-                1.0f, -1.0f,  1.0f, 0.0f,
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                1.0f, -1.0f,  1.0f, 0.0f,
-                1.0f,  1.0f,  1.0f, 1.0f
+                -1.0f,  1.0f,
+                -1.0f, -1.0f,
+                1.0f, -1.0f,
+                -1.0f,  1.0f,
+                1.0f, -1.0f,
+                1.0f,  1.0f
         };
         VAO_POST = glGenVertexArrays();
         VBO_POST = glGenBuffers();
@@ -150,9 +150,7 @@ public class Renderer {
         glBindBuffer(GL_ARRAY_BUFFER, VBO_POST);
         glBufferData(GL_ARRAY_BUFFER, quadVertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, false, 16, 0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 16, 8);
+        glVertexAttribPointer(0, 2, GL_FLOAT, false, 8, 0);
 
         System.out.println("Ititializing Framebuffer");
 
