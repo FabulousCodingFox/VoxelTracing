@@ -27,17 +27,16 @@ public class Texture3D {
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        String[] files = new File(getClass().getResource(folderpath).getPath()).list();
-
         int WIDTH = 8;
         int HEIGHT = 8;
         int DEPTH = 8;
 
         glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, WIDTH, HEIGHT, DEPTH, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
 
-        for(int i = 0; i < files.length; i++){
+        for(int i = 0; i < DEPTH; i++){
+            System.out.println("Loading texture " + (i+1) + " of " + DEPTH);
             String absolutePath = Objects.requireNonNull(getClass().getClassLoader().getResource(
-                    folderpath + File.separator + i + ".png"
+                    folderpath + "/" + (i+1) + ".png"
             )).getPath().substring(1);
             if(!System.getProperty("os.name").contains("Windows")){
                 absolutePath = File.separator + absolutePath;
