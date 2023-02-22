@@ -38,8 +38,7 @@ public class Renderer {
 
     private int VAO_WORLD;
     private int vaosize;
-    private ArrayList<Integer> VBO_WORLD;
-    private ArrayList<Texture3D> TEX_WORLD;
+    private ArrayList<Model> models;
 
     private int VAO_POST;
     private int VBO_POST;
@@ -142,7 +141,7 @@ public class Renderer {
 
         GL.createCapabilities();
 
-        glEnable(GL_TEXTURE_3D);
+        glEnable(GL_TEXTURE_2D);
 
         float[] quadVertices = {
                 -1.0f,  1.0f,
@@ -209,66 +208,13 @@ public class Renderer {
 
         System.out.println("Initializing World...");
 
-        float[] vertices = {
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-        };
-
-        vaosize = vertices.length / 5;
         VAO_WORLD = glGenVertexArrays();
         glBindVertexArray(VAO_WORLD);
 
-        VBO_WORLD = new ArrayList<>();
-        TEX_WORLD = new ArrayList<>();
+        models = new ArrayList<>();
+        models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), 23, 13, 52));
 
-        int v = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, v);
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+2)*4, 0);
-        glEnableVertexAttribArray(0); // Position
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, (3+2)*4, 4*3);
-        glEnableVertexAttribArray(1); // UV
-        VBO_WORLD.add(v);
-        TEX_WORLD.add(new Texture3D("models/debug", 2));
+        vaosize = 36 * models.size();
     }
 
     public boolean shouldClose(){
@@ -288,7 +234,7 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if(FRAMEBUFFFER) glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
         glEnable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,7 +245,9 @@ public class Renderer {
         SHADER_GRID.setMatrix4f("projection", projectionMatrix);
         SHADER_GRID.setMatrix4f("view", viewMatrix);
         SHADER_GRID.setMatrix4f("model", modelMatrix);
-        SHADER_GRID.setInt("dataContainer", 2);
+
+        Model model = models.get(0);
+        model.prepareShader(SHADER_GRID, position, direction);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
         glDrawArrays(GL_TRIANGLES, 0, vaosize);
@@ -310,7 +258,6 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if(FRAMEBUFFFER) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-
             glDisable(GL_DEPTH_TEST);
             glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
@@ -318,6 +265,7 @@ public class Renderer {
             //glPolygonMode(GL_FRONT_FACE, GL_LINE);
 
             SHADER_POST.use();
+            SHADER_POST.setInt("screenTexture", 0);
             SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
             glBindVertexArray(VAO_POST);
             glActiveTexture(GL_TEXTURE0);
