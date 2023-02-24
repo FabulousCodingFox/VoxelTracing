@@ -253,7 +253,6 @@ public class Renderer {
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
 
         for(Model model : models){
-            SHADER_GRID.setMatrix4f("model", new Matrix4f());
             model.prepareShader(SHADER_GRID);
             glDrawArrays(GL_TRIANGLES, 36 * model.getId(), 36 * (model.getId() + 1));
         }

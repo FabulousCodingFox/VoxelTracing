@@ -1,5 +1,6 @@
 package de.fabulousfox.engine;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import static org.lwjgl.opengl.GL33.*;
@@ -88,6 +89,7 @@ public class Model {
     }
 
     public void prepareShader(Shader shader) {
+        shader.setMatrix4f("model", new Matrix4f().translate(getPosition()));
         shader.setInt("dataContainer", 1);
         shader.setInt("sizeX", sizeX);
         shader.setInt("sizeY", sizeY);
