@@ -212,7 +212,7 @@ public class Renderer {
         glBindVertexArray(VAO_WORLD);
 
         models = new ArrayList<>();
-        models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), 23, 13, 52));
+        models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), 23, 12, 52));
 
         vaosize = 36 * models.size();
     }
@@ -247,7 +247,11 @@ public class Renderer {
         SHADER_GRID.setMatrix4f("model", modelMatrix);
 
         Model model = models.get(0);
-        model.prepareShader(SHADER_GRID, position, direction);
+        SHADER_GRID.setVector3f("position", position);
+        SHADER_GRID.setVector3f("rotation", direction.normalize());
+        SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
+        SHADER_GRID.setFloat("iTime", (float) getTime());
+        model.prepareShader(SHADER_GRID);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
         glDrawArrays(GL_TRIANGLES, 0, vaosize);

@@ -23,7 +23,7 @@ public class Texture {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         // set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         // load image, create texture and generate mipmaps
@@ -35,11 +35,21 @@ public class Texture {
         IntBuffer x = BufferUtils.createIntBuffer(1);
         IntBuffer y = BufferUtils.createIntBuffer(1);
         IntBuffer channels = BufferUtils.createIntBuffer(1);
-        ByteBuffer image = stbi_load(absolutePath, x, y, channels, STBI_rgb);
+        ByteBuffer image = stbi_load(absolutePath, x, y, channels, STBI_rgb_alpha);
         if (image == null) {
             throw new IllegalStateException("Could not decode image file ["+ absolutePath +"]: ["+ stbi_failure_reason() +"]");
         }
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x.get(), y.get(), 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+        /*int channelamount = channels.get();
+
+        int format = GL_RED;
+        if (channelamount == 3) {
+            format = GL_RGB;
+        } else if (channelamount == 4) {
+            format = GL_RGBA;
+        }*/
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x.get(), y.get(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
         glGenerateMipmap(GL_TEXTURE_2D);
         stbi_image_free(image);
     }
