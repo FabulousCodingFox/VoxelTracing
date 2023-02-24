@@ -17,52 +17,66 @@ uniform int MAX_TEXTURE_SIZE;
 uniform vec3 position;
 uniform vec3 direction;
 
-const int RAY_STEPS = 10;
-
 bool isNear(float a, float b){
     return abs(a-b) < .01;
 }
 
 vec4 getVoxelAtXYZ(int x, int y, int z){
     if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(1., 1., 1., 0.);
-
     y = sizeY - y - 1;
-
     int overflows = 0;
     int xp = z;
     int yp = x + y * sizeX;
-
     while (yp >= MAX_TEXTURE_SIZE) {
         yp -= MAX_TEXTURE_SIZE;
         xp += sizeZ;
         overflows+=1;
     }
-
-    return texture(dataContainer, vec2(float(xp) / float(textureSizeX), float(yp) / float(textureSizeY)));
-
-    /*//int posX = z + sizeZ * int(floor(sizeX * sizeY / 4000.));
-    //int posY = Math.min(4000,image.getHeight() - (voxel.getPosition().x + voxel.getPosition().z * sizeX));
-
-    vec2 coords = vec2(
-        float(z) / float(sizeZ),
-        float(x + y * sizeX) / float(sizeY * sizeX)
-    );
-    vec4 t = texture(dataContainer, coords);
-    return t;*/
+    return texture(dataContainer, vec2(float(xp+.5) / float(textureSizeX), float(yp+.5) / float(textureSizeY)));
 }
 
 vec4 raycast(vec3 rayPos, vec3 rayDir){
-    rayPos += rayDir / RAY_STEPS;
-    for(int i=0;i<RAY_STEPS*(sizeX + sizeY + sizeZ);++i)
+    rayPos += rayDir / 10;
+    for(int i=0;i<10*(sizeX + sizeY + sizeZ);++i)
     {
         ivec3 mapPos = ivec3(floor(rayPos + 0.));
         vec4 voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if(voxel.a > 0.9) return voxel;
-        rayPos += rayDir / RAY_STEPS;
+        rayPos += rayDir / 10;
     }
-
     return vec4(0., 1., 0., 0.);
 }
+
+vec4 raycastDDA(vec3 rayPos, vec3 rayDir){
+    ivec3 mapPos = ivec3(floor(rayPos + 0.));
+    vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
+    ivec3 rayStep = ivec3(sign(rayDir));
+    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    vec4 voxel = vec4(0., 1., 0., 0.);
+    bvec3 mask;
+
+    for (int i = 0; i < sizeX + sizeY + sizeZ; i++){
+        voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
+        if(voxel.a > 0.999) break;
+
+        mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+        sideDist += deltaDist * vec3(mask);
+        mapPos += rayStep * ivec3(mask);
+    }
+
+    if (mask.x) {
+        voxel.xyz *= 0.5;
+    }
+    if (mask.y) {
+        voxel.xyz  *= 1.0;
+    }
+    if (mask.z) {
+        voxel.xyz  *= 0.75;
+    }
+
+    return voxel;
+}
+
 
 void main(){
     vec2 uv = uvData.xy;
@@ -109,7 +123,7 @@ void main(){
         start = vec3(pixelX, 0., pixelZ);
     }
 
-    vec4 c = raycast(start, dir);
-    //if(c.a < .5) discard;
+    vec4 c = raycastDDA(start, dir);
+    if(c.a < .5) discard;
     FragColor = c;
 }

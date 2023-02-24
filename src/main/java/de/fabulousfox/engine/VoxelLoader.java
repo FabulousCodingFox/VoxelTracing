@@ -56,6 +56,9 @@ public class VoxelLoader {
 
         try (VoxReader reader = new VoxReader(VoxelLoader.class.getResourceAsStream(path))) {
             VoxFile voxFile = reader.read();
+
+            System.out.println("Voxel File: " + path + " contains " + voxFile.getModelInstances().size() + " models.");
+
             for (VoxModelInstance model_instance : voxFile.getModelInstances()) {
 
                 if (counter>=32) break;
@@ -71,7 +74,7 @@ public class VoxelLoader {
 
                 for (Voxel voxel : model.getVoxels()) {
                     int color;
-                    if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length){ color = Color.RED.getRGB(); }
+                    if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length){ color = Color.WHITE.getRGB(); }
                     else{ color = voxFile.getPalette()[voxel.getColourIndex()]; }
 
                     voxelTexture.setVoxel(

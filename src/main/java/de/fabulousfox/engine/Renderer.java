@@ -206,7 +206,9 @@ public class Renderer {
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
+
+        //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
+        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
 
         glBindVertexArray(0);
     }
