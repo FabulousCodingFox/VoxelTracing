@@ -44,7 +44,7 @@ vec4 raycast(vec3 origin, vec3 direction){
         ivec3 mapPos = ivec3(floor(rayPos + 0.));
         //if(mapPos.x < 0 || mapPos.x >= sizeX || mapPos.y < 0 || mapPos.y >= sizeY || mapPos.z < 0 || mapPos.z >= sizeZ) return vec4(1., 1., 1., 0.);
         vec4 voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
-        if(voxel.a > 0.5) return voxel;
+        if(voxel.a > 0.999) return voxel;
         rayPos += rayDir / RAY_STEPS;
     }
 
