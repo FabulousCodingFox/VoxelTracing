@@ -18,7 +18,7 @@ uniform float iTime;
 uniform vec3 position;
 uniform vec3 direction;
 
-const int RAY_STEPS = 1;
+const int RAY_STEPS = 10;
 
 bool isNear(float a, float b){
     return abs(a-b) < .01;
@@ -34,15 +34,11 @@ vec4 getVoxelAtXYZ(int x, int y, int z){
     return t;
 }
 
-vec4 raycast(vec3 origin, vec3 direction){
-    vec3 rayDir = normalize(direction);
-    vec3 rayPos = origin;
+vec4 raycast(vec3 rayPos, vec3 rayDir){
     rayPos += rayDir / RAY_STEPS;
-
     for(int i=0;i<RAY_STEPS*(sizeX + sizeY + sizeZ);++i)
     {
         ivec3 mapPos = ivec3(floor(rayPos + 0.));
-        //if(mapPos.x < 0 || mapPos.x >= sizeX || mapPos.y < 0 || mapPos.y >= sizeY || mapPos.z < 0 || mapPos.z >= sizeZ) return vec4(1., 1., 1., 0.);
         vec4 voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if(voxel.a > 0.999) return voxel;
         rayPos += rayDir / RAY_STEPS;
@@ -54,54 +50,49 @@ vec4 raycast(vec3 origin, vec3 direction){
 void main(){
     vec2 uv = uvData.xy;
     float normal = uvData.z;
-    vec4 col = vec4(0., 0., 0., 1.);
+    vec4 col = vec4(1., 0., 0., 1.);
 
     vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
     dir.z = -dir.z;
+    vec3 start;
 
     if(isNear(normal, 0.)){
         float pixelX = uv.x * float(sizeX);
         float pixelY = uv.y * float(sizeY);
-        vec3 start = vec3(pixelX, pixelY, 0.);
-        col = vec4(raycast(start, dir));
+        start = vec3(pixelX, pixelY, 0.);
     }
 
     if(isNear(normal, 1.)){
         float pixelX = uv.x * float(sizeX);
         float pixelY = uv.y * float(sizeY);
-        vec3 start = vec3(pixelX, pixelY, sizeZ);
-        col = vec4(raycast(start, dir));
+        start = vec3(pixelX, pixelY, sizeZ);
     }
 
     if(isNear(normal, 2.)){
         float pixelZ = uv.x * float(sizeZ);
         float pixelY = uv.y * float(sizeY);
-        vec3 start = vec3(sizeX, sizeY - pixelY, pixelZ);
-        col = vec4(raycast(start, dir));
+        start = vec3(sizeX, sizeY - pixelY, pixelZ);
     }
 
     if(isNear(normal, 3.)){
         float pixelZ = uv.x * float(sizeZ);
         float pixelY = uv.y * float(sizeY);
-        vec3 start = vec3(0., sizeY - pixelY, sizeZ - pixelZ);
-        col = vec4(raycast(start, dir));
+        start = vec3(0., sizeY - pixelY, sizeZ - pixelZ);
     }
 
     if(isNear(normal, 4.)){
         float pixelX = uv.x * float(sizeX);
         float pixelZ = uv.y * float(sizeZ);
-        vec3 start = vec3(pixelX, sizeY, pixelZ);
-        col = vec4(raycast(start, dir));
+        start = vec3(pixelX, sizeY, pixelZ);
     }
 
     if(isNear(normal, 5.)){
         float pixelX = uv.x * float(sizeX);
         float pixelZ = uv.y * float(sizeZ);
-        vec3 start = vec3(pixelX, 0., pixelZ);
-        col = vec4(raycast(start, dir));
+        start = vec3(pixelX, 0., pixelZ);
     }
 
-    if(col.a < .5) discard;
-
-    FragColor = col;
+    vec4 c = raycast(start, dir);
+    //if(c.a < .5) discard;
+    FragColor = c;
 }

@@ -213,7 +213,7 @@ public class Renderer {
 
         //models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), new Vector3f(0, 0, 0), 23, 12, 52));
 
-        models.addAll(VoxelLoader.load("/models/castle.vox"));
+        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
 
         vaosize = 36 * models.size();
     }

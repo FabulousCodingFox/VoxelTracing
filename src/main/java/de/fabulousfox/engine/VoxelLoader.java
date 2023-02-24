@@ -65,7 +65,7 @@ public class VoxelLoader {
 
                 int sizeX = model.getSize().x;
                 int sizeY = model.getSize().z;
-                int sizeZ = model.getSize().y;
+                int sizeZ = model.getSize().y + 1;
 
                 BufferedImage image = new BufferedImage(sizeZ, sizeX * sizeY, BufferedImage.TYPE_INT_ARGB);
 
