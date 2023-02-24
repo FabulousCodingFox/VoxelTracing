@@ -208,7 +208,7 @@ public class Renderer {
         models = new ArrayList<>();
 
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        models.addAll(VoxelLoader.load("/models/menger.vox"));
 
         glBindVertexArray(0);
     }
