@@ -63,8 +63,6 @@ public class VoxelLoader {
                 GridPoint3 world_Offset = model_instance.worldOffset;
                 VoxModelBlueprint model = model_instance.model;
 
-                System.out.println(model.getSize().toString());
-
                 int sizeX = model.getSize().x;
                 int sizeY = model.getSize().z;
                 int sizeZ = model.getSize().y + 1;

@@ -21,6 +21,8 @@ public class Model {
     private final int textureSizeX;
     private final int textureSizeY;
 
+    private int vao;
+
     public Model(Texture data, Vector3f position, int sizeX, int sizeY, int sizeZ, int textureSizeX, int textureSizeY) {
         this.position = new Vector3f(position).mul(VOXEL_SIZE);
 
@@ -38,8 +40,6 @@ public class Model {
 
         this.textureSizeX = textureSizeX;
         this.textureSizeY = textureSizeY;
-
-        System.out.println(dimX + "x" + dimY + "x" + dimZ);
 
         float[] vertices = {
                 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
@@ -85,6 +85,8 @@ public class Model {
                 0.0f, dimY, 0.0f,  0.0f, 1.0f, 4f
         };
 
+        vao = glGenVertexArrays();
+        glBindVertexArray(vao);
 
         int vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -93,6 +95,8 @@ public class Model {
         glEnableVertexAttribArray(0); // Position
         glVertexAttribPointer(1, 3, GL_FLOAT, false, (3+3)*4, 4*(3));
         glEnableVertexAttribArray(1); // UV
+
+        glBindVertexArray(0);
     }
 
     public void prepareShader(Shader shader) {
@@ -109,4 +113,9 @@ public class Model {
     public int getId() {
         return id;
     }
+
+    public int getVAO() {
+        return vao;
+    }
+
 }

@@ -6,7 +6,7 @@ import org.joml.Vector3f;
 
 import java.io.IOException;
 
-import static org.lwjgl.opengl.GL46.*;
+import static org.lwjgl.opengl.GL33.*;
 
 public class Shader {
     int ID;

@@ -11,6 +11,7 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
@@ -35,8 +36,6 @@ public class Renderer {
 
     private final Shader SHADER_GRID, SHADER_POST;
 
-    private int VAO_WORLD;
-    private int vaosize;
     private ArrayList<Model> models;
 
     private int VAO_POST;
@@ -206,14 +205,10 @@ public class Renderer {
 
         System.out.println("Initializing World...");
 
-        VAO_WORLD = glGenVertexArrays();
-        glBindVertexArray(VAO_WORLD);
-
         models = new ArrayList<>();
-
         models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
 
-        vaosize = 36 * models.size();
+        glBindVertexArray(0);
     }
 
     public boolean shouldClose(){
@@ -249,11 +244,11 @@ public class Renderer {
         //SHADER_GRID.setFloat("iTime", (float) getTime());
         SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
 
-        for(Model model : models){
+        for(Model model : models.stream().sorted(Comparator.comparing(Model::getId)).toList()){
             model.prepareShader(SHADER_GRID);
-            glDrawArrays(GL_TRIANGLES, 36 * model.getId(), 36 * (model.getId() + 1));
+            glBindVertexArray(model.getVAO());
+            glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
         // Second Pass
