@@ -12,8 +12,11 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class Texture {
     private final int texture;
+    private final int channelNum;
 
-    public Texture(String path, int texChannel) {
+    public Texture(String path, int texChannel, int texChannelNum) {
+        this.channelNum = texChannelNum;
+
         glActiveTexture(texChannel);
         texture = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -61,5 +64,9 @@ public class Texture {
 
     public int get() {
         return texture;
+    }
+
+    public int getChannelNum() {
+        return channelNum;
     }
 }

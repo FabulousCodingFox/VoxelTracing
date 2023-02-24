@@ -249,6 +249,7 @@ public class Renderer {
         SHADER_GRID.setVector3f("rotation", direction.normalize());
         SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
         SHADER_GRID.setFloat("iTime", (float) getTime());
+        SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
 

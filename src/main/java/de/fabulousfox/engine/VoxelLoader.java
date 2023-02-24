@@ -67,30 +67,25 @@ public class VoxelLoader {
                 int sizeY = model.getSize().z;
                 int sizeZ = model.getSize().y + 1;
 
-                BufferedImage image = new BufferedImage(sizeZ, sizeX * sizeY, BufferedImage.TYPE_INT_ARGB);
-
-                System.out.println(image.getWidth() + "x" + image.getHeight());
+                VoxelTexture voxelTexture = new VoxelTexture(sizeX, sizeY, sizeZ);
 
                 for (Voxel voxel : model.getVoxels()) {
                     if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length) continue;
-                    int posX = voxel.getPosition().y;
-                    int posY = image.getHeight() - (voxel.getPosition().x + voxel.getPosition().z * sizeX);
 
-                    if(posX < 0 || posX >= image.getWidth() || posY < 0 || posY >= image.getHeight()) continue;
-
-                    image.setRGB(
-                            posX,
-                            posY,
+                    voxelTexture.setVoxel(
+                            voxel.getPosition().x,
+                            voxel.getPosition().z,
+                            voxel.getPosition().y,
                             voxFile.getPalette()[voxel.getColourIndex()]
                     );
                 }
 
-                ImageIO.write(image, "png", new File("C:/tmp/voxel/" + counter + ".png"));
+                ImageIO.write(voxelTexture.getTexture(), "png", new File("C:/tmp/voxel/" + counter + ".png"));
 
                 models.add(new Model(
-                        new Texture("C:/tmp/voxel/" + counter + ".png", intToGL_TEXTURE(counter)),
+                        new Texture("C:/tmp/voxel/" + counter + ".png", intToGL_TEXTURE(counter), counter),
                         new Vector3f(world_Offset.x, world_Offset.y, world_Offset.z),
-                        sizeX, sizeY, sizeZ
+                        sizeX, sizeY, sizeZ, voxelTexture.getImageWidth(), voxelTexture.getImageHeight()
                 ));
 
                 counter++;
