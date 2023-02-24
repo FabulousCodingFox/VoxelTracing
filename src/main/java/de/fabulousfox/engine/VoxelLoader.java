@@ -4,7 +4,7 @@ import de.fabulousfox.libs.voxfileparser.*;
 import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,6 +63,8 @@ public class VoxelLoader {
                 GridPoint3 world_Offset = model_instance.worldOffset;
                 VoxModelBlueprint model = model_instance.model;
 
+                System.out.println(model.getSize().toString());
+
                 int sizeX = model.getSize().x;
                 int sizeY = model.getSize().z;
                 int sizeZ = model.getSize().y + 1;
@@ -70,13 +72,15 @@ public class VoxelLoader {
                 VoxelTexture voxelTexture = new VoxelTexture(sizeX, sizeY, sizeZ);
 
                 for (Voxel voxel : model.getVoxels()) {
-                    if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length) continue;
+                    int color;
+                    if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length){ color = Color.RED.getRGB(); }
+                    else{ color = voxFile.getPalette()[voxel.getColourIndex()]; }
 
                     voxelTexture.setVoxel(
                             voxel.getPosition().x,
                             voxel.getPosition().z,
                             voxel.getPosition().y,
-                            voxFile.getPalette()[voxel.getColourIndex()]
+                            color
                     );
                 }
 
@@ -92,7 +96,7 @@ public class VoxelLoader {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
 
         return models;

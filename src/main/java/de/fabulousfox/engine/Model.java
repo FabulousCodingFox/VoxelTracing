@@ -6,24 +6,23 @@ import org.joml.Vector3f;
 import static org.lwjgl.opengl.GL33.*;
 
 public class Model {
-    public static float VOXEL_SIZE = 0.05f;
+    public static final float VOXEL_SIZE = 0.05f;
 
     private static int idCounter = 0;
     private final int id;
 
-    private Vector3f position;
+    private final Vector3f position;
 
-    private Texture data;
-    private int sizeX;
-    private int sizeY;
-    private int sizeZ;
-    private int vbo;
+    private final Texture data;
+    private final int sizeX;
+    private final int sizeY;
+    private final int sizeZ;
 
-    private int textureSizeX;
-    private int textureSizeY;
+    private final int textureSizeX;
+    private final int textureSizeY;
 
     public Model(Texture data, Vector3f position, int sizeX, int sizeY, int sizeZ, int textureSizeX, int textureSizeY) {
-        this.position = position.mul(VOXEL_SIZE);
+        this.position = new Vector3f(position).mul(VOXEL_SIZE);
 
         this.id = idCounter;
         idCounter++;
@@ -33,12 +32,14 @@ public class Model {
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
 
-        float dimX = sizeX * VOXEL_SIZE;
-        float dimY = sizeY * VOXEL_SIZE;
-        float dimZ = sizeZ * VOXEL_SIZE;
+        final float dimX = sizeX * VOXEL_SIZE;
+        final float dimY = sizeY * VOXEL_SIZE;
+        final float dimZ = sizeZ * VOXEL_SIZE;
 
         this.textureSizeX = textureSizeX;
         this.textureSizeY = textureSizeY;
+
+        System.out.println(dimX + "x" + dimY + "x" + dimZ);
 
         float[] vertices = {
                 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
@@ -83,9 +84,9 @@ public class Model {
                 0.0f, dimY, dimZ,  0.0f, 0.0f, 4f,
                 0.0f, dimY, 0.0f,  0.0f, 1.0f, 4f
         };
-        
 
-        vbo = glGenBuffers();
+
+        int vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+3)*4, 0);
@@ -95,18 +96,14 @@ public class Model {
     }
 
     public void prepareShader(Shader shader) {
-        shader.setMatrix4f("model", new Matrix4f().translate(getPosition()));
-        shader.setInt("dataContainer", data.getChannelNum());
-        shader.setInt("sizeX", sizeX);
-        shader.setInt("sizeY", sizeY);
-        shader.setInt("sizeZ", sizeZ);
+        shader.setMatrix4f("model", new Matrix4f().translate(this.position));
+        shader.setInt("dataContainer", this.data.getChannelNum());
+        shader.setInt("sizeX", this.sizeX);
+        shader.setInt("sizeY", this.sizeY);
+        shader.setInt("sizeZ", this.sizeZ);
         shader.setFloat("voxelSize", VOXEL_SIZE);
-        shader.setInt("textureSizeX", textureSizeX);
-        shader.setInt("textureSizeY", textureSizeY);
-    }
-
-    public Vector3f getPosition() {
-        return position;
+        shader.setInt("textureSizeX", this.textureSizeX);
+        shader.setInt("textureSizeY", this.textureSizeY);
     }
 
     public int getId() {

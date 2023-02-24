@@ -211,9 +211,7 @@ public class Renderer {
 
         models = new ArrayList<>();
 
-        //models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), new Vector3f(0, 0, 0), 23, 12, 52));
-
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
 
         vaosize = 36 * models.size();
     }
@@ -247,8 +245,8 @@ public class Renderer {
         SHADER_GRID.setMatrix4f("view", viewMatrix);
         SHADER_GRID.setVector3f("position", position);
         SHADER_GRID.setVector3f("rotation", direction.normalize());
-        SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-        SHADER_GRID.setFloat("iTime", (float) getTime());
+        //SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
+        //SHADER_GRID.setFloat("iTime", (float) getTime());
         SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);

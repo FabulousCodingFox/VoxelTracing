@@ -14,9 +14,6 @@ uniform int textureSizeY;
 uniform float voxelSize;
 uniform int MAX_TEXTURE_SIZE;
 
-uniform vec2 iResolution;
-uniform float iTime;
-
 uniform vec3 position;
 uniform vec3 direction;
 
