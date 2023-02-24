@@ -18,7 +18,7 @@ uniform float iTime;
 uniform vec3 position;
 uniform vec3 direction;
 
-const int RAY_STEPS = 20;
+const int RAY_STEPS = 1;
 
 bool isNear(float a, float b){
     return abs(a-b) < .01;

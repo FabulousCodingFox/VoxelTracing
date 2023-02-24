@@ -27,7 +27,12 @@ public class Texture {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         // load image, create texture and generate mipmaps
-        String absolutePath = Objects.requireNonNull(FileUtils.class.getClassLoader().getResource(path)).getPath().substring(1);
+        String absolutePath;
+        if(path.startsWith("C:/")){
+            absolutePath = path;
+        } else {
+            absolutePath = Objects.requireNonNull(FileUtils.class.getClassLoader().getResource(path)).getPath().substring(1);
+        }
         if(!System.getProperty("os.name").contains("Windows")){
             absolutePath = File.separator + absolutePath;
         }

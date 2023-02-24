@@ -21,7 +21,6 @@ public class Renderer {
     private final long window;
     private int windowWidth, windowHeight;
 
-    private Matrix4f modelMatrix;
     private Matrix4f viewMatrix;
     private Matrix4f projectionMatrix;
 
@@ -201,7 +200,6 @@ public class Renderer {
         System.out.println("Initializing Matrix...");
 
         projectionMatrix = getProjectionMatrix();
-        modelMatrix = new Matrix4f();
         viewMatrix = getViewMatrix(new Vector3f(0,0,0), new Vector3f(0,0,1));
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -212,7 +210,10 @@ public class Renderer {
         glBindVertexArray(VAO_WORLD);
 
         models = new ArrayList<>();
-        models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), 23, 12, 52));
+
+        //models.add(new Model(new Texture("models/debug/car.png", GL_TEXTURE1), new Vector3f(0, 0, 0), 23, 12, 52));
+
+        models.addAll(VoxelLoader.load("/models/mediumboat.vox"));
 
         vaosize = 36 * models.size();
     }
@@ -234,7 +235,7 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if(FRAMEBUFFFER) glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
         glEnable(GL_DEPTH_TEST);
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,18 +245,18 @@ public class Renderer {
         SHADER_GRID.use();
         SHADER_GRID.setMatrix4f("projection", projectionMatrix);
         SHADER_GRID.setMatrix4f("view", viewMatrix);
-        SHADER_GRID.setMatrix4f("model", modelMatrix);
-
-        Model model = models.get(0);
         SHADER_GRID.setVector3f("position", position);
         SHADER_GRID.setVector3f("rotation", direction.normalize());
         SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
         SHADER_GRID.setFloat("iTime", (float) getTime());
-        model.prepareShader(SHADER_GRID);
 
         glBindBuffer(GL_ARRAY_BUFFER, VAO_WORLD);
-        glDrawArrays(GL_TRIANGLES, 0, vaosize);
 
+        for(Model model : models){
+            SHADER_GRID.setMatrix4f("model", new Matrix4f());
+            model.prepareShader(SHADER_GRID);
+            glDrawArrays(GL_TRIANGLES, 36 * model.getId(), 36 * (model.getId() + 1));
+        }
 
         // Second Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

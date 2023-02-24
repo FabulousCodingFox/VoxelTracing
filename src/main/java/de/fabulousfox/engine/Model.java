@@ -1,9 +1,16 @@
 package de.fabulousfox.engine;
 
+import org.joml.Vector3f;
+
 import static org.lwjgl.opengl.GL33.*;
 
 public class Model {
-    private final float voxelSize = 0.05f;
+    public static float VOXEL_SIZE = 0.05f;
+
+    private static int idCounter = 0;
+    private final int id;
+
+    private Vector3f position;
 
     private Texture data;
     private int sizeX;
@@ -11,15 +18,20 @@ public class Model {
     private int sizeZ;
     private int vbo;
 
-    public Model(Texture data, int sizeX, int sizeY, int sizeZ) {
+    public Model(Texture data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
+        this.position = position.mul(VOXEL_SIZE);
+
+        this.id = idCounter;
+        idCounter++;
+
         this.data = data;
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
 
-        float dimX = sizeX * voxelSize;
-        float dimY = sizeY * voxelSize;
-        float dimZ = sizeZ * voxelSize;
+        float dimX = sizeX * VOXEL_SIZE;
+        float dimY = sizeY * VOXEL_SIZE;
+        float dimZ = sizeZ * VOXEL_SIZE;
 
         float[] vertices = {
                 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
@@ -80,7 +92,14 @@ public class Model {
         shader.setInt("sizeX", sizeX);
         shader.setInt("sizeY", sizeY);
         shader.setInt("sizeZ", sizeZ);
-        shader.setFloat("voxelSize", voxelSize);
+        shader.setFloat("voxelSize", VOXEL_SIZE);
     }
 
+    public Vector3f getPosition() {
+        return position;
+    }
+
+    public int getId() {
+        return id;
+    }
 }
