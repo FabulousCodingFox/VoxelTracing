@@ -93,7 +93,7 @@ public class VoxelLoader {
                 }
 
                 models.add(new Model(
-                        new Texture3D("C:/tmp/voxel/" + counter + "_%s.png", intToGL_TEXTURE(counter), counter),
+                        new Texture3D("C:/tmp/voxel/" + counter + "_%s.png", intToGL_TEXTURE(counter), counter, sizeX, sizeY, sizeZ),
                         new Vector3f(world_Offset.x, world_Offset.y, world_Offset.z),
                         sizeX, sizeY, sizeZ
                 ));

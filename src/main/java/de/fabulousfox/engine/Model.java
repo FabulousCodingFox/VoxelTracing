@@ -18,12 +18,9 @@ public class Model {
     private final int sizeY;
     private final int sizeZ;
 
-    private final int textureSizeX;
-    private final int textureSizeY;
-
     private int vao;
 
-    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ, int textureSizeX, int textureSizeY) {
+    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
         this.position = new Vector3f(position).mul(VOXEL_SIZE);
 
         this.id = idCounter;
@@ -37,9 +34,6 @@ public class Model {
         final float dimX = sizeX * VOXEL_SIZE;
         final float dimY = sizeY * VOXEL_SIZE;
         final float dimZ = sizeZ * VOXEL_SIZE;
-
-        this.textureSizeX = textureSizeX;
-        this.textureSizeY = textureSizeY;
 
         float[] vertices = {
                 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
@@ -106,8 +100,6 @@ public class Model {
         shader.setInt("sizeY", this.sizeY);
         shader.setInt("sizeZ", this.sizeZ);
         shader.setFloat("voxelSize", VOXEL_SIZE);
-        shader.setInt("textureSizeX", this.textureSizeX);
-        shader.setInt("textureSizeY", this.textureSizeY);
     }
 
     public int getId() {

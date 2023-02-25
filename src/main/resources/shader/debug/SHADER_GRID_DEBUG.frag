@@ -9,10 +9,7 @@ uniform sampler3D dataContainer;
 uniform int sizeX;
 uniform int sizeY;
 uniform int sizeZ;
-uniform int textureSizeX;
-uniform int textureSizeY;
 uniform float voxelSize;
-uniform int MAX_TEXTURE_SIZE;
 
 uniform vec3 position;
 uniform vec3 direction;
