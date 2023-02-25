@@ -12,7 +12,6 @@ import org.lwjgl.system.MemoryStack;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
@@ -35,7 +34,7 @@ public class Renderer {
     private int FRAMEBUFFER_COLORBUFFER;
     private int FRAMEBUFFER_RENDERBUFFER1;
 
-    private final Shader SHADER_GRID, SHADER_POST;
+    private final Shader SHADER_GRID, SHADER_POST, SHADER_DEBUG_NORMALS;
 
     private ArrayList<Model> models;
 
@@ -186,13 +185,18 @@ public class Renderer {
         System.out.println("Initializing Shaders...");
         System.out.println("SHADER_GRID_DEBUG");
         SHADER_GRID = new Shader(
-                "shader/debug/SHADER_GRID_DEBUG.vert",
-                "shader/debug/SHADER_GRID_DEBUG.frag"
+                "shader/main/VERT.vert",
+                "shader/main/FRAGMENT.frag"
         );
         System.out.println("SHADER_POST_DEBUG");
         SHADER_POST = new Shader(
-                "shader/debug/SHADER_POST_DEBUG.vert",
-                "shader/debug/SHADER_POST_DEBUG.frag"
+                "shader/post/POST.vert",
+                "shader/post/POST.frag"
+        );
+        System.out.println("SHADER_DEBUG_NORMALS");
+        SHADER_DEBUG_NORMALS = new Shader(
+                "shader/main/VERT.vert",
+                "shader/debug/NORMALS.frag"
         );
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +213,7 @@ public class Renderer {
         models = new ArrayList<>();
 
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/yacht_small.vox"));
+        models.addAll(VoxelLoader.load("/models/castle.vox"));
 
         glBindVertexArray(0);
     }
@@ -238,18 +242,21 @@ public class Renderer {
 
         viewMatrix = getViewMatrix(position, direction);
 
-        SHADER_GRID.use();
-        SHADER_GRID.setMatrix4f("projection", projectionMatrix);
-        SHADER_GRID.setMatrix4f("view", viewMatrix);
-        SHADER_GRID.setVector3f("position", position);
-        SHADER_GRID.setVector3f("rotation", direction.normalize());
+        Shader s = glfwGetKey(window, GLFW_KEY_N) != GLFW_PRESS ? SHADER_GRID : SHADER_DEBUG_NORMALS;
+
+        s.use();
+        s.setMatrix4f("projection", projectionMatrix);
+        s.setMatrix4f("view", viewMatrix);
+        s.setVector3f("position", position);
+        s.setVector3f("rotation", direction.normalize());
         //SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
         //SHADER_GRID.setFloat("iTime", (float) getTime());
         //SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
-
         for(Model model : models.stream().sorted(Comparator.comparingDouble(m -> -m.getPosition().distance(position))).toList()){
-            model.prepareShader(SHADER_GRID);
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_3D, model.getTextureId());
+            model.prepareShader(s);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -323,5 +330,18 @@ public class Renderer {
         if(key == Key.CROUCH) return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
         if(key == Key.JUMP) return glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
         return false;
+    }
+
+    public void destroy(){
+        for(Model model : models){
+            model.remove();
+        }
+        SHADER_GRID.delete();
+        SHADER_POST.delete();
+        glDeleteFramebuffers(FRAMEBUFFER);
+        glDeleteTextures(FRAMEBUFFER_COLORBUFFER);
+        glDeleteVertexArrays(VAO_POST);
+        glfwDestroyWindow(window);
+        glfwTerminate();
     }
 }

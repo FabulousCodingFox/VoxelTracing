@@ -18,7 +18,7 @@ public class Model {
     private final int sizeY;
     private final int sizeZ;
 
-    private int vao;
+    private int vao, vbo;
 
     public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
         this.position = position;
@@ -82,7 +82,7 @@ public class Model {
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
-        int vbo = glGenBuffers();
+        vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+3)*4, 0);
@@ -95,7 +95,7 @@ public class Model {
 
     public void prepareShader(Shader shader) {
         shader.setMatrix4f("model", new Matrix4f().translate(this.position));
-        shader.setInt("dataContainer", this.data.getChannelNum());
+        shader.setInt("dataContainer", 5);
         shader.setInt("sizeX", this.sizeX);
         shader.setInt("sizeY", this.sizeY);
         shader.setInt("sizeZ", this.sizeZ);
@@ -112,5 +112,15 @@ public class Model {
 
     public Vector3f getPosition() {
         return position;
+    }
+
+    public int getTextureId() {
+        return data.get();
+    }
+
+    public void remove() {
+        glDeleteVertexArrays(vao);
+        glDeleteBuffers(vbo);
+        data.remove();
     }
 }

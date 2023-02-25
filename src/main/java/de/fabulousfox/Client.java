@@ -81,6 +81,8 @@ public class Client {
             running = !engine.shouldClose();
             engine.render(new Vector3f(playerPosition), new Vector3f(playerLookAt));
         }
+
+        engine.destroy();
     }
 
     public static void main(String[] args) {
