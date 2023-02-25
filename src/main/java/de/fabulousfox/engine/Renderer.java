@@ -12,6 +12,7 @@ import org.lwjgl.system.MemoryStack;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
@@ -208,7 +209,7 @@ public class Renderer {
         models = new ArrayList<>();
 
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
-        models.addAll(VoxelLoader.load("/models/menger.vox"));
+        models.addAll(VoxelLoader.load("/models/vehicle/boat/yacht_small.vox"));
 
         glBindVertexArray(0);
     }
@@ -247,7 +248,7 @@ public class Renderer {
         //SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
 
-        for(Model model : models.stream().sorted(Comparator.comparing(Model::getId)).toList()){
+        for(Model model : models.stream().sorted(Comparator.comparingDouble(m -> -m.getPosition().distance(position))).toList()){
             model.prepareShader(SHADER_GRID);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);

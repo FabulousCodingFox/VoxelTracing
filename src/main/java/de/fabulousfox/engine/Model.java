@@ -21,7 +21,7 @@ public class Model {
     private int vao;
 
     public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
-        this.position = new Vector3f(position).mul(VOXEL_SIZE);
+        this.position = position;
 
         this.id = idCounter;
         idCounter++;
@@ -110,4 +110,7 @@ public class Model {
         return vao;
     }
 
+    public Vector3f getPosition() {
+        return position;
+    }
 }
