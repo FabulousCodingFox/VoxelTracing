@@ -141,6 +141,9 @@ public class Renderer {
 
         glEnable(GL_TEXTURE_2D);
 
+        //glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CW);
+
         float[] quadVertices = {
                 -1.0f,  1.0f,
                 -1.0f, -1.0f,
@@ -213,7 +216,7 @@ public class Renderer {
         models = new ArrayList<>();
 
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
-        models.addAll(VoxelLoader.load("/models/castle.vox"));
+        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
 
         glBindVertexArray(0);
     }
@@ -253,12 +256,15 @@ public class Renderer {
         //SHADER_GRID.setFloat("iTime", (float) getTime());
         //SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
-        for(Model model : models.stream().sorted(Comparator.comparingDouble(m -> -m.getPosition().distance(position))).toList()){
+        for(Model model : models.stream().sorted(Comparator.comparingDouble(m -> m.getPosition().distance(position))).toList()){
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
             model.prepareShader(s);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            //Vector3f pos = new Vector3f(model.getPosition()).sub(position).mul(Model.VOXEL_SIZE).mul;
+            //System.out.println((int)pos.x + " " + (int)pos.y + " " + (int)pos.z);
         }
 
         // Second Pass

@@ -44,11 +44,11 @@ public class Model {
                 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
 
                 0.0f, 0.0f, dimZ,  0.0f, 0.0f, 0f,
+                dimX, dimY, dimZ,  1.0f, 1.0f, 0f,
                 dimX, 0.0f, dimZ,  1.0f, 0.0f, 0f,
                 dimX, dimY, dimZ,  1.0f, 1.0f, 0f,
-                dimX, dimY, dimZ,  1.0f, 1.0f, 0f,
-                0.0f, dimY, dimZ,  0.0f, 1.0f, 0f,
                 0.0f, 0.0f, dimZ,  0.0f, 0.0f, 0f,
+                0.0f, dimY, dimZ,  0.0f, 1.0f, 0f,
 
                 0.0f, 0.0f, dimZ,  1.0f, 1.0f, 3f,
                 0.0f, dimY, 0.0f,  0.0f, 0.0f, 3f,
@@ -65,11 +65,11 @@ public class Model {
                 dimX, dimY, dimZ,  0.0f, 0.0f, 2f,
 
                 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 5f,
+                dimX, 0.0f, dimZ,  1.0f, 0.0f, 5f,
                 dimX, 0.0f, 0.0f,  1.0f, 1.0f, 5f,
                 dimX, 0.0f, dimZ,  1.0f, 0.0f, 5f,
-                dimX, 0.0f, dimZ,  1.0f, 0.0f, 5f,
-                0.0f, 0.0f, dimZ,  0.0f, 0.0f, 5f,
                 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 5f,
+                0.0f, 0.0f, dimZ,  0.0f, 0.0f, 5f,
 
                 0.0f, dimY, 0.0f,  0.0f, 1.0f, 4f,
                 dimX, dimY, 0.0f,  1.0f, 1.0f, 4f,
@@ -99,6 +99,7 @@ public class Model {
         shader.setInt("sizeX", this.sizeX);
         shader.setInt("sizeY", this.sizeY);
         shader.setInt("sizeZ", this.sizeZ);
+        shader.setVector3f("modelPosition", this.position);
         shader.setFloat("voxelSize", VOXEL_SIZE);
     }
 

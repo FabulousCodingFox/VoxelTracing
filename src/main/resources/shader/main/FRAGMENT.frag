@@ -10,9 +10,13 @@ uniform int sizeX;
 uniform int sizeY;
 uniform int sizeZ;
 uniform float voxelSize;
+uniform vec3 modelPosition;
 
 uniform vec3 position;
 uniform vec3 direction;
+
+const int accuracy = 3;
+const int raycastExpandHitbox = 3;
 
 bool isNear(float a, float b){
     return abs(a-b) < .01;
@@ -36,7 +40,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir){
     {
         ivec3 mapPos = ivec3(floor(rayPos + 0.));
 
-        if(mapPos.x < -1 || mapPos.x >= sizeX + 1 || mapPos.y < -1 || mapPos.y >= sizeY + 1 || mapPos.z < -1 || mapPos.z >= sizeZ + 1) break;
+        if(mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
 
         vec4 voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if(voxel.a > 0.9) return voxel;
@@ -54,6 +58,8 @@ vec4 raycastDDA(vec3 rayPos, vec3 rayDir){
     bvec3 mask;
 
     for (int i = 0; i < sizeX + sizeY + sizeZ; i++){
+        if(mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
+
         voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if(voxel.a > 0.999) break;
 
@@ -66,10 +72,10 @@ vec4 raycastDDA(vec3 rayPos, vec3 rayDir){
         voxel.xyz *= 0.5;
     }
     if (mask.y) {
-        voxel.xyz  *= 1.0;
+        voxel.xyz *= 1.0;
     }
     if (mask.z) {
-        voxel.xyz  *= 0.75;
+        voxel.xyz *= 0.75;
     }
 
     return voxel;
@@ -77,6 +83,10 @@ vec4 raycastDDA(vec3 rayPos, vec3 rayDir){
 
 
 void main(){
+    vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
+    if(playerOutsideOfBox != gl_FrontFacing) discard;
+
     vec2 uv = uvData.xy;
     float normal = uvData.z;
     vec4 col = vec4(1., 0., 0., 1.);
@@ -85,40 +95,45 @@ void main(){
     dir.z = -dir.z;
     vec3 start;
 
-    if(isNear(normal, 0.)){
-        float pixelX = uv.x * float(sizeX);
-        float pixelY = uv.y * float(sizeY);
-        start = vec3(pixelX, pixelY, 0.);
-    }
+    if(playerOutsideOfBox){
+        if (isNear(normal, 0.)){
+            float pixelX = uv.x * float(sizeX);
+            float pixelY = uv.y * float(sizeY);
+            start = vec3(pixelX, pixelY, 0.);
+        }
 
-    if(isNear(normal, 1.)){
-        float pixelX = uv.x * float(sizeX);
-        float pixelY = uv.y * float(sizeY);
-        start = vec3(pixelX, pixelY, sizeZ);
-    }
+        if (isNear(normal, 1.)){
+            float pixelX = uv.x * float(sizeX);
+            float pixelY = uv.y * float(sizeY);
+            start = vec3(pixelX, pixelY, sizeZ);
+        }
 
-    if(isNear(normal, 2.)){
-        float pixelZ = uv.x * float(sizeZ);
-        float pixelY = uv.y * float(sizeY);
-        start = vec3(sizeX, sizeY - pixelY, pixelZ);
-    }
+        if (isNear(normal, 2.)){
+            float pixelZ = uv.x * float(sizeZ);
+            float pixelY = uv.y * float(sizeY);
+            start = vec3(sizeX, sizeY - pixelY, pixelZ);
+        }
 
-    if(isNear(normal, 3.)){
-        float pixelZ = uv.x * float(sizeZ);
-        float pixelY = uv.y * float(sizeY);
-        start = vec3(0., sizeY - pixelY, sizeZ - pixelZ);
-    }
+        if (isNear(normal, 3.)){
+            float pixelZ = uv.x * float(sizeZ);
+            float pixelY = uv.y * float(sizeY);
+            start = vec3(0., sizeY - pixelY, sizeZ - pixelZ);
+        }
 
-    if(isNear(normal, 4.)){
-        float pixelX = uv.x * float(sizeX);
-        float pixelZ = uv.y * float(sizeZ);
-        start = vec3(pixelX, sizeY, pixelZ);
-    }
+        if (isNear(normal, 4.)){
+            float pixelX = uv.x * float(sizeX);
+            float pixelZ = uv.y * float(sizeZ);
+            start = vec3(pixelX, sizeY, pixelZ);
+        }
 
-    if(isNear(normal, 5.)){
-        float pixelX = uv.x * float(sizeX);
-        float pixelZ = uv.y * float(sizeZ);
-        start = vec3(pixelX, 0., pixelZ);
+        if (isNear(normal, 5.)){
+            float pixelX = uv.x * float(sizeX);
+            float pixelZ = uv.y * float(sizeZ);
+            start = vec3(pixelX, 0., pixelZ);
+        }
+    }else{
+        start = playerOffset;
+        start.z = sizeZ - start.z;
     }
 
     vec4 c = raycastDDA(start, dir);
