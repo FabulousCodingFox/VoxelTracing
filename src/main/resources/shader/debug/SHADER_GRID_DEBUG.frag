@@ -19,17 +19,15 @@ bool isNear(float a, float b){
 }
 
 vec4 getVoxelAtXYZ(int x, int y, int z){
-    if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(1., 1., 1., 0.);
-    y = sizeY - y - 1;
-    int overflows = 0;
-    int xp = z;
-    int yp = x + y * sizeX;
-    while (yp >= MAX_TEXTURE_SIZE) {
-        yp -= MAX_TEXTURE_SIZE;
-        xp += sizeZ;
-        overflows+=1;
-    }
-    return texture(dataContainer, vec2(float(xp+.5) / float(textureSizeX), float(yp+.5) / float(textureSizeY)));
+    if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(0., 1., 0., 0.);
+    return texture(
+        dataContainer,
+        vec3(
+            float(x) / float(sizeX),
+            float(y) / float(sizeY),
+            float(z) / float(sizeZ)
+        )
+    );
 }
 
 vec4 raycast(vec3 rayPos, vec3 rayDir){
@@ -37,6 +35,9 @@ vec4 raycast(vec3 rayPos, vec3 rayDir){
     for(int i=0;i<10*(sizeX + sizeY + sizeZ);++i)
     {
         ivec3 mapPos = ivec3(floor(rayPos + 0.));
+
+        if(mapPos.x < -1 || mapPos.x >= sizeX + 1 || mapPos.y < -1 || mapPos.y >= sizeY + 1 || mapPos.z < -1 || mapPos.z >= sizeZ + 1) break;
+
         vec4 voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if(voxel.a > 0.9) return voxel;
         rayPos += rayDir / 10;

@@ -67,8 +67,8 @@ public class VoxelLoader {
                 GridPoint3 world_Offset = model_instance.worldOffset;
                 VoxModelBlueprint model = model_instance.model;
 
-                int sizeX = model.getSize().x;
-                int sizeY = model.getSize().z;
+                int sizeX = model.getSize().x + 1;
+                int sizeY = model.getSize().z + 1;
                 int sizeZ = model.getSize().y + 1;
 
                 BufferedImage[] images = new BufferedImage[sizeY];
