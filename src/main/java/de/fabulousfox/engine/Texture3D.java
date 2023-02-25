@@ -2,61 +2,64 @@ package de.fabulousfox.engine;
 
 import org.lwjgl.BufferUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.Objects;
 
-import static org.lwjgl.opengl.GL33.*;
-import static org.lwjgl.stb.STBImage.*;
+import static org.lwjgl.opengl.GL46.*;
 
 public class Texture3D {
-    private int texID;
+    private final int texture;
+    private final int channelNum;
 
-    public Texture3D(String folderpath, int texChannel) {
+    public Texture3D(int texChannel, int texChannelNum, int sizeX, int sizeY, int sizeZ) {
+        this.channelNum = texChannelNum;
+
         glActiveTexture(texChannel);
-        texID = glGenTextures();
-        glBindTexture(GL_TEXTURE_3D, texID);
+        texture = glGenTextures();
+        glBindTexture(GL_TEXTURE_3D, texture);
 
-        // set the texture wrapping parameters
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-        // set texture filtering parameters
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        int WIDTH = 8;
-        int HEIGHT = 8;
-        int DEPTH = 8;
+        ByteBuffer image = BufferUtils.createByteBuffer(sizeX * sizeY * sizeZ * 8);
 
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, WIDTH, HEIGHT, DEPTH, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        for(int subimgid = 0; subimgid < sizeY; subimgid++){
+            try {
+                BufferedImage loadedSubImg = ImageIO.read(new File("C:/tmp/voxel/" + subimgid + ".png"));
+                for (int pixelX = 0; pixelX < sizeX; pixelX++) {
+                    for (int pixelY = 0; pixelY < sizeZ; pixelY++) {
+                        int voxelColor = loadedSubImg.getRGB(pixelX, pixelY);
 
-        for(int i = 0; i < DEPTH; i++){
-            System.out.println("Loading texture " + (i+1) + " of " + DEPTH);
-            String absolutePath = Objects.requireNonNull(getClass().getClassLoader().getResource(
-                    folderpath + "/" + (i+1) + ".png"
-            )).getPath().substring(1);
-            if(!System.getProperty("os.name").contains("Windows")){
-                absolutePath = File.separator + absolutePath;
+                        int address = (pixelX + subimgid * sizeX + pixelY * sizeX * sizeY) * 4;
+
+                        image.put(address, (byte) ((voxelColor >> 16) & 0xFF)); // Red component
+                        image.put(address + 1, (byte) ((voxelColor >> 8) & 0xFF));  // Green component
+                        image.put(address + 2, (byte) (voxelColor & 0xFF));         // Blue component
+                        image.put(address + 3, (byte) ((voxelColor >> 24) & 0xFF)); // Alpha component. Only for RGBA
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            stbi_set_flip_vertically_on_load(true);
-            IntBuffer x = BufferUtils.createIntBuffer(1);
-            IntBuffer y = BufferUtils.createIntBuffer(1);
-            IntBuffer channels = BufferUtils.createIntBuffer(1);
-            ByteBuffer image = stbi_load(absolutePath, x, y, channels, STBI_rgb_alpha);
-            if (image == null) {
-                throw new IllegalStateException("Could not decode image file ["+ absolutePath +"]: ["+ stbi_failure_reason() +"]");
-            }
-
-            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, i, WIDTH, HEIGHT, 1, GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-            stbi_image_free(image);
         }
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, sizeX, sizeY, sizeZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+        glGenerateMipmap(GL_TEXTURE_3D);
     }
 
     public int get() {
-        return texID;
+        return texture;
+    }
+
+    public int getChannelNum() {
+        return channelNum;
     }
 }
