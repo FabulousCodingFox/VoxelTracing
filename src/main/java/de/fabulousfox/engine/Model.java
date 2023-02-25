@@ -124,4 +124,8 @@ public class Model {
         glDeleteBuffers(vbo);
         data.remove();
     }
+
+    public Vector3f getSize() {
+        return new Vector3f(sizeX, sizeY, sizeZ);
+    }
 }

@@ -145,7 +145,4 @@ void main(){
     DDAResult c = raycastDDA(start, dir);
     if(c.color.a < .5) discard;
     FragColor = c.color;
-
-    gl_FragData
-
 }

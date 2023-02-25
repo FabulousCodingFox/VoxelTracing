@@ -144,6 +144,7 @@ public class Renderer {
         glEnable(GL_TEXTURE_2D);
 
         //glEnable(GL_CULL_FACE);
+        //glCullFace(GL_FRONT);
         glFrontFace(GL_CW);
 
         float[] quadVertices = {
@@ -254,11 +255,8 @@ public class Renderer {
         s.setMatrix4f("view", viewMatrix);
         s.setVector3f("position", position);
         s.setVector3f("rotation", direction.normalize());
-        //SHADER_GRID.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-        //SHADER_GRID.setFloat("iTime", (float) getTime());
-        //SHADER_GRID.setInt("MAX_TEXTURE_SIZE", VoxelTexture.MAX_TEXTURE_SIZE);
 
-        for(Model model : models.stream().sorted(Comparator.comparingDouble(m -> m.getPosition().distance(position))).toList()){
+        for(Model model : models){
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
             model.prepareShader(s);
