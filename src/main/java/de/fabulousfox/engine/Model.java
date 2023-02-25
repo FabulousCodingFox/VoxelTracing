@@ -3,7 +3,7 @@ package de.fabulousfox.engine;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.opengl.GL46.*;
 
 public class Model {
     public static final float VOXEL_SIZE = 0.05f;

@@ -18,6 +18,12 @@ uniform vec3 direction;
 const int accuracy = 3;
 const int raycastExpandHitbox = 3;
 
+struct DDAResult{
+    vec4 color;
+    bvec3 normal;
+    float distance;
+};
+
 bool isNear(float a, float b){
     return abs(a-b) < .01;
 }
@@ -49,7 +55,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir){
     return vec4(0., 1., 0., 0.);
 }
 
-vec4 raycastDDA(vec3 rayPos, vec3 rayDir){
+DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -78,7 +84,7 @@ vec4 raycastDDA(vec3 rayPos, vec3 rayDir){
         voxel.xyz *= 0.75;
     }
 
-    return voxel;
+    return DDAResult(voxel, mask, 0.);
 }
 
 
@@ -136,7 +142,10 @@ void main(){
         start.z = sizeZ - start.z;
     }
 
-    vec4 c = raycastDDA(start, dir);
-    if(c.a < .5) discard;
-    FragColor = c;
+    DDAResult c = raycastDDA(start, dir);
+    if(c.color.a < .5) discard;
+    FragColor = c.color;
+
+    gl_FragData
+
 }
