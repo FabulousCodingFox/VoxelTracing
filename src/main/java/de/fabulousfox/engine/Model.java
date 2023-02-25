@@ -13,7 +13,7 @@ public class Model {
 
     private final Vector3f position;
 
-    private final Texture data;
+    private final Texture3D data;
     private final int sizeX;
     private final int sizeY;
     private final int sizeZ;
@@ -23,7 +23,7 @@ public class Model {
 
     private int vao;
 
-    public Model(Texture data, Vector3f position, int sizeX, int sizeY, int sizeZ, int textureSizeX, int textureSizeY) {
+    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ, int textureSizeX, int textureSizeY) {
         this.position = new Vector3f(position).mul(VOXEL_SIZE);
 
         this.id = idCounter;

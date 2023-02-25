@@ -4,7 +4,7 @@ out vec4 FragColor;
 in vec3 uvData;
 in vec3 fragPos;
 
-uniform sampler2D dataContainer;
+uniform sampler3D dataContainer;
 
 uniform int sizeX;
 uniform int sizeY;

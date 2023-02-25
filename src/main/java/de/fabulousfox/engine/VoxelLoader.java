@@ -5,6 +5,7 @@ import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,14 +55,14 @@ public class VoxelLoader {
     public static ArrayList<Model> load(String path) {
         ArrayList<Model> models = new ArrayList<>();
 
+        if (counter>=32) return models;
+
         try (VoxReader reader = new VoxReader(VoxelLoader.class.getResourceAsStream(path))) {
             VoxFile voxFile = reader.read();
 
             System.out.println("Voxel File: " + path + " contains " + voxFile.getModelInstances().size() + " models.");
 
             for (VoxModelInstance model_instance : voxFile.getModelInstances()) {
-
-                if (counter>=32) break;
 
                 GridPoint3 world_Offset = model_instance.worldOffset;
                 VoxModelBlueprint model = model_instance.model;
@@ -70,27 +71,31 @@ public class VoxelLoader {
                 int sizeY = model.getSize().z;
                 int sizeZ = model.getSize().y + 1;
 
-                VoxelTexture voxelTexture = new VoxelTexture(sizeX, sizeY, sizeZ);
+                BufferedImage[] images = new BufferedImage[sizeY];
 
                 for (Voxel voxel : model.getVoxels()) {
                     int color;
                     if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length){ color = Color.WHITE.getRGB(); }
                     else{ color = voxFile.getPalette()[voxel.getColourIndex()]; }
 
-                    voxelTexture.setVoxel(
-                            voxel.getPosition().x,
-                            voxel.getPosition().z,
-                            voxel.getPosition().y,
-                            color
-                    );
+                    if (images[voxel.getPosition().z] == null) {
+                        images[voxel.getPosition().z] = new BufferedImage(sizeX, sizeZ, BufferedImage.TYPE_INT_ARGB);
+                    }
+
+                    images[voxel.getPosition().z].setRGB(voxel.getPosition().x, voxel.getPosition().y, color);
                 }
 
-                ImageIO.write(voxelTexture.getTexture(), "png", new File("C:/tmp/voxel/" + counter + ".png"));
+                for(int i = 0; i < images.length; i++){
+                    if(images[i] == null) {
+                        images[i] = new BufferedImage(sizeX, sizeZ, BufferedImage.TYPE_INT_ARGB);
+                    }
+                    ImageIO.write(images[i], "png", new File("C:/tmp/voxel/" + counter + "_" + i + ".png"));
+                }
 
                 models.add(new Model(
-                        new Texture("C:/tmp/voxel/" + counter + ".png", intToGL_TEXTURE(counter), counter),
+                        new Texture3D("C:/tmp/voxel/" + counter + "_%s.png", intToGL_TEXTURE(counter), counter),
                         new Vector3f(world_Offset.x, world_Offset.y, world_Offset.z),
-                        sizeX, sizeY, sizeZ, voxelTexture.getImageWidth(), voxelTexture.getImageHeight()
+                        sizeX, sizeY, sizeZ
                 ));
 
                 counter++;

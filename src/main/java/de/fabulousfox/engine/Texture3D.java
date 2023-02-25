@@ -14,7 +14,7 @@ public class Texture3D {
     private final int texture;
     private final int channelNum;
 
-    public Texture3D(int texChannel, int texChannelNum, int sizeX, int sizeY, int sizeZ) {
+    public Texture3D(String path, int texChannel, int texChannelNum, int sizeX, int sizeY, int sizeZ) {
         this.channelNum = texChannelNum;
 
         glActiveTexture(texChannel);
@@ -32,7 +32,7 @@ public class Texture3D {
 
         for(int subimgid = 0; subimgid < sizeY; subimgid++){
             try {
-                BufferedImage loadedSubImg = ImageIO.read(new File("C:/tmp/voxel/" + subimgid + ".png"));
+                BufferedImage loadedSubImg = ImageIO.read(new File(path.replace("%s", String.valueOf(subimgid))));
                 for (int pixelX = 0; pixelX < sizeX; pixelX++) {
                     for (int pixelY = 0; pixelY < sizeZ; pixelY++) {
                         int voxelColor = loadedSubImg.getRGB(pixelX, pixelY);
