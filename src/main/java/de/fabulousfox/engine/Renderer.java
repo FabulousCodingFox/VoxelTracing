@@ -11,7 +11,6 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
@@ -30,16 +29,14 @@ public class Renderer {
 
     private double lastMouseXP, lastMouseYP, mouseOffX, mouseOffY;
 
-    private int FRAMEBUFFER;
-    private int FRAMEBUFFER_COLORBUFFER;
-    private int FRAMEBUFFER_RENDERBUFFER1;
-
-    private final Shader SHADER_GRID, SHADER_POST, SHADER_DEBUG_NORMALS;
+    private final Shader SHADER_GRID, SHADER_POST;
 
     private ArrayList<Model> models;
 
     private int VAO_POST;
     private int VBO_POST;
+
+    private int gBuffer, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle){
         this.windowWidth = windowWidth;
@@ -60,8 +57,8 @@ public class Renderer {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
         glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -90,7 +87,7 @@ public class Renderer {
             projectionMatrix = getProjectionMatrix();
 
             // Resize Framebuffer
-            glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
+            /*glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
@@ -103,7 +100,7 @@ public class Renderer {
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindTexture(GL_TEXTURE_2D, 0);
-            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);*/
         });
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -163,29 +160,6 @@ public class Renderer {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, false, 8, 0);
 
-        System.out.println("Ititializing Framebuffer");
-
-        FRAMEBUFFER = glGenFramebuffers();
-        glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
-
-        FRAMEBUFFER_COLORBUFFER = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER, 0);
-
-        FRAMEBUFFER_RENDERBUFFER1 = glGenRenderbuffers();
-        glBindRenderbuffer(GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
-            System.out.println("Framebuffer not initialized");
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
         //////////////////////////////////////////////////////////////////////////////////////
 
         System.out.println("Initializing Shaders...");
@@ -200,10 +174,6 @@ public class Renderer {
                 "shader/post/POST.frag"
         );
         System.out.println("SHADER_DEBUG_NORMALS");
-        SHADER_DEBUG_NORMALS = new Shader(
-                "shader/main/VERT.vert",
-                "shader/debug/NORMALS.frag"
-        );
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -214,14 +184,49 @@ public class Renderer {
 
         //////////////////////////////////////////////////////////////////////////////////////
 
+        System.out.println("Initializing gBuffer...");
+
+        gBuffer = glGenFramebuffers();
+        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+
+        gBufferALBEDO = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferALBEDO);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gBufferALBEDO, 0);
+
+        gBufferNORMAL = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferNORMAL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, windowWidth, windowHeight, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gBufferNORMAL, 0);
+
+        gBufferLinearDepth = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferLinearDepth);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, windowWidth, windowHeight, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBufferLinearDepth, 0);
+
+        int[] attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        glDrawBuffers(attachments);
+
+        gBufferRboDepth = glGenRenderbuffers();
+        glBindRenderbuffer(GL_RENDERBUFFER, gBufferRboDepth);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gBufferRboDepth);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            throw new RuntimeException("Framebuffer not complete!");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        //////////////////////////////////////////////////////////////////////////////////////
+
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-
-        //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat_caribbean.vox"));
         models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
-
-        glBindVertexArray(0);
     }
 
     public boolean shouldClose(){
@@ -229,64 +234,72 @@ public class Renderer {
     }
 
     public void render(Vector3f position, Vector3f direction){
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        final boolean FRAMEBUFFFER = false;
-
         float currentFrame = (float) glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // First Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        if(FRAMEBUFFFER) glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
         viewMatrix = getViewMatrix(position, direction);
-
-        Shader s = glfwGetKey(window, GLFW_KEY_N) != GLFW_PRESS ? SHADER_GRID : SHADER_DEBUG_NORMALS;
-
-        s.use();
-        s.setMatrix4f("projection", projectionMatrix);
-        s.setMatrix4f("view", viewMatrix);
-        s.setVector3f("position", position);
-        s.setVector3f("rotation", direction.normalize());
-
-        for(Model model : models){
+        SHADER_GRID.use();
+        SHADER_GRID.setMatrix4f("projection", projectionMatrix);
+        SHADER_GRID.setMatrix4f("view", viewMatrix);
+        SHADER_GRID.setVector3f("position", position);
+        SHADER_GRID.setVector3f("rotation", direction.normalize());
+        for(Model model : models) {
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
-            model.prepareShader(s);
+            model.prepareShader(SHADER_GRID);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
-
-            //Vector3f pos = new Vector3f(model.getPosition()).sub(position).mul(Model.VOXEL_SIZE).mul;
-            //System.out.println((int)pos.x + " " + (int)pos.y + " " + (int)pos.z);
         }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Second Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        if(FRAMEBUFFFER) {
-            glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-            glDisable(GL_DEPTH_TEST);
-            glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
 
-            //glPolygonMode(GL_FRONT_FACE, GL_LINE);
+        glDisable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT);
+        SHADER_POST.use();
 
-            SHADER_POST.use();
-            SHADER_POST.setInt("screenTexture", 0);
-            SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-            glBindVertexArray(VAO_POST);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glBindVertexArray(0);
-        }
+        glActiveTexture(GL_TEXTURE10);
+        glBindTexture(GL_TEXTURE_2D, gBufferALBEDO);
+        SHADER_POST.setInt("gBufferALBEDO", 10);
+
+        glActiveTexture(GL_TEXTURE11);
+        glBindTexture(GL_TEXTURE_2D, gBufferNORMAL);
+        SHADER_POST.setInt("gBufferNORMAL", 11);
+
+        glActiveTexture(GL_TEXTURE12);
+        glBindTexture(GL_TEXTURE_2D, gBufferLinearDepth);
+        SHADER_POST.setInt("gBufferLinearDepth", 12);
+
+        SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
+
+        glBindVertexArray(VAO_POST);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         double[] a = new double[1];
@@ -344,8 +357,12 @@ public class Renderer {
         }
         SHADER_GRID.delete();
         SHADER_POST.delete();
-        glDeleteFramebuffers(FRAMEBUFFER);
-        glDeleteTextures(FRAMEBUFFER_COLORBUFFER);
+
+        glDeleteFramebuffers(gBuffer);
+        glDeleteTextures(gBufferALBEDO);
+        glDeleteTextures(gBufferNORMAL);
+        glDeleteTextures(gBufferLinearDepth);
+
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);
         glfwTerminate();

@@ -1,5 +1,8 @@
 #version 330 core
-out vec4 FragColor;
+
+layout (location = 0) out vec4 gBufferALBEDO;
+layout (location = 1) out vec3 gBufferNORMAL;
+layout (location = 2) out float gBufferLinearDepth;
 
 in vec3 uvData;
 in vec3 fragPos;
@@ -74,16 +77,6 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
         mapPos += rayStep * ivec3(mask);
     }
 
-    if (mask.x) {
-        voxel.xyz *= 0.5;
-    }
-    if (mask.y) {
-        voxel.xyz *= 1.0;
-    }
-    if (mask.z) {
-        voxel.xyz *= 0.75;
-    }
-
     return DDAResult(voxel, mask, 0.);
 }
 
@@ -144,5 +137,8 @@ void main(){
 
     DDAResult c = raycastDDA(start, dir);
     if(c.color.a < .5) discard;
-    FragColor = c.color;
+
+    gBufferALBEDO = c.color;
+    gBufferNORMAL = vec3(c.normal);
+    gBufferLinearDepth = length(fragPos - position);
 }
