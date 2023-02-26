@@ -1,4 +1,4 @@
-package de.fabulousfox.engine;
+package de.fabulousfox.engine.utils;
 
 public enum Key {
     WALK_FORWARD,

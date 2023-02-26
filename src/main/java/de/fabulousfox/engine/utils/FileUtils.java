@@ -1,4 +1,4 @@
-package de.fabulousfox.engine;
+package de.fabulousfox.engine.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;

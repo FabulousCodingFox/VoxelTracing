@@ -1,6 +1,6 @@
 package de.fabulousfox;
 
-import de.fabulousfox.engine.Key;
+import de.fabulousfox.engine.utils.Key;
 import de.fabulousfox.engine.Renderer;
 import org.joml.Vector3f;
 

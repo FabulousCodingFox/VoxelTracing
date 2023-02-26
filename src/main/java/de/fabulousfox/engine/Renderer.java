@@ -1,5 +1,7 @@
 package de.fabulousfox.engine;
 
+import de.fabulousfox.engine.utils.Key;
+import de.fabulousfox.engine.wrapper.Shader;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;

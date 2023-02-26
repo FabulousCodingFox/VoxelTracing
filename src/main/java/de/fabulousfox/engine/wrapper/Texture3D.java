@@ -1,4 +1,4 @@
-package de.fabulousfox.engine;
+package de.fabulousfox.engine.wrapper;
 
 import org.lwjgl.BufferUtils;
 

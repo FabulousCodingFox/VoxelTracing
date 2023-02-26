@@ -1,5 +1,6 @@
-package de.fabulousfox.engine;
+package de.fabulousfox.engine.wrapper;
 
+import de.fabulousfox.engine.utils.FileUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;

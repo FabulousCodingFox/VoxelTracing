@@ -1,5 +1,6 @@
 package de.fabulousfox.engine;
 
+import de.fabulousfox.engine.wrapper.Texture3D;
 import de.fabulousfox.libs.voxfileparser.*;
 import org.joml.Vector3f;
 
