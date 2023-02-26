@@ -3,21 +3,29 @@ package de.fabulousfox.engine;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Random;
 
+import static org.joml.Math.lerp;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Renderer {
+    private final int ZFAR = 2147483647;
+    private final float ZNEAR = 0.1f;
+
     private final long window;
     private int windowWidth, windowHeight;
 
@@ -36,7 +44,10 @@ public class Renderer {
     private int VAO_POST;
     private int VBO_POST;
 
-    private int gBuffer, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth;
+    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth;
+
+    private Vector3f[] ssaoKernel, ssaoNoise;
+    private int ssaoNoiseTexture;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle){
         this.windowWidth = windowWidth;
@@ -210,7 +221,14 @@ public class Renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBufferLinearDepth, 0);
 
-        int[] attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        gBufferPOSITION = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gBufferPOSITION, 0);
+
+        int[] attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(attachments);
 
         gBufferRboDepth = glGenRenderbuffers();
@@ -223,10 +241,55 @@ public class Renderer {
 
         //////////////////////////////////////////////////////////////////////////////////////
 
+        System.out.println("Initializing SSAO Kernels...");
+
+        Random random = new Random();
+
+        ssaoKernel = new Vector3f[64];
+        for(int i = 0; i < 64; i++) {
+            Vector3f sample = new Vector3f(
+                    (random.nextFloat() * 2.0f) - 1.0f,
+                    (random.nextFloat() * 2.0f) - 1.0f,
+                    random.nextFloat()
+            );
+            sample.normalize();
+            sample.mul(random.nextFloat());
+            float scale = (float) i / 64.0f;
+            scale = lerp(0.1f, 1.0f, scale * scale);
+            sample.mul(scale);
+            ssaoKernel[i] = sample;
+        }
+
+        ssaoNoise = new Vector3f[16];
+        for(int i = 0; i < 16; i++) {
+            Vector3f noise = new Vector3f(
+                    (random.nextFloat() * 2.0f) - 1.0f,
+                    (random.nextFloat() * 2.0f) - 1.0f,
+                    0.0f
+            );
+            ssaoNoise[i] = noise;
+        }
+
+        ssaoNoiseTexture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, ssaoNoiseTexture);
+        ByteBuffer buffer = BufferUtils.createByteBuffer(16 * 3 * 4);
+        for(int i = 0; i < 16; i++) {
+            buffer.putFloat(ssaoNoise[i].x);
+            buffer.putFloat(ssaoNoise[i].y);
+            buffer.putFloat(ssaoNoise[i].z);
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, buffer);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        //////////////////////////////////////////////////////////////////////////////////////
+
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        models.addAll(VoxelLoader.load("/models/castle.vox"));
     }
 
     public boolean shouldClose(){
@@ -256,6 +319,12 @@ public class Renderer {
         SHADER_GRID.setMatrix4f("view", viewMatrix);
         SHADER_GRID.setVector3f("position", position);
         SHADER_GRID.setVector3f("rotation", direction.normalize());
+
+        SHADER_GRID.setFloat("zNear", ZNEAR);
+        SHADER_GRID.setInt("zFar", ZFAR);
+
+        models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
+
         for(Model model : models) {
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
@@ -274,6 +343,11 @@ public class Renderer {
         glDisable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT);
         SHADER_POST.use();
+        int debugDisplayMode = 0;
+        if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) debugDisplayMode = 1;
+        if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) debugDisplayMode = 2;
+        if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) debugDisplayMode = 3;
+        SHADER_POST.setInt("debugDisplayMode", debugDisplayMode);
 
         glActiveTexture(GL_TEXTURE10);
         glBindTexture(GL_TEXTURE_2D, gBufferALBEDO);
@@ -286,6 +360,10 @@ public class Renderer {
         glActiveTexture(GL_TEXTURE12);
         glBindTexture(GL_TEXTURE_2D, gBufferLinearDepth);
         SHADER_POST.setInt("gBufferLinearDepth", 12);
+
+        glActiveTexture(GL_TEXTURE13);
+        glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
+        SHADER_POST.setInt("gBufferPOSITION", 13);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
@@ -322,7 +400,7 @@ public class Renderer {
     }
 
     public Matrix4f getProjectionMatrix() {
-        return new Matrix4f().perspective((float) Math.toRadians(70), (float)windowWidth/(float)windowHeight, 0.1f, Integer.MAX_VALUE);
+        return new Matrix4f().perspective((float) Math.toRadians(70), (float)windowWidth/(float)windowHeight, ZNEAR, ZFAR);
     }
 
     public double getMouseMoveX(){

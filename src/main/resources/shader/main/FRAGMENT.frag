@@ -3,6 +3,7 @@
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
 layout (location = 2) out float gBufferLinearDepth;
+layout (location = 3) out vec4 gBufferPosition;
 
 in vec3 uvData;
 in vec3 fragPos;
@@ -12,11 +13,16 @@ uniform sampler3D dataContainer;
 uniform int sizeX;
 uniform int sizeY;
 uniform int sizeZ;
-uniform float voxelSize;
 uniform vec3 modelPosition;
+
+uniform float voxelSize;
 
 uniform vec3 position;
 uniform vec3 direction;
+
+uniform float zNear;
+//uniform float zFar;
+const int zFar = 2147483647;
 
 const int accuracy = 3;
 const int raycastExpandHitbox = 3;
@@ -25,6 +31,7 @@ struct DDAResult{
     vec4 color;
     bvec3 normal;
     float distance;
+    vec3 position;
 };
 
 bool isNear(float a, float b){
@@ -41,21 +48,6 @@ vec4 getVoxelAtXYZ(int x, int y, int z){
             float(z) / float(sizeZ)
         )
     );
-}
-
-vec4 raycast(vec3 rayPos, vec3 rayDir){
-    rayPos += rayDir / 10;
-    for(int i=0;i<10*(sizeX + sizeY + sizeZ);++i)
-    {
-        ivec3 mapPos = ivec3(floor(rayPos + 0.));
-
-        if(mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
-
-        vec4 voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
-        if(voxel.a > 0.9) return voxel;
-        rayPos += rayDir / 10;
-    }
-    return vec4(0., 1., 0., 0.);
 }
 
 DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
@@ -77,7 +69,8 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
         mapPos += rayStep * ivec3(mask);
     }
 
-    return DDAResult(voxel, mask, 0.);
+    vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
+    return DDAResult(voxel, mask, length(position - pos), pos);
 }
 
 
@@ -140,5 +133,10 @@ void main(){
 
     gBufferALBEDO = c.color;
     gBufferNORMAL = vec3(c.normal);
-    gBufferLinearDepth = length(fragPos - position);
+
+    float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+    gBufferPosition = vec4(c.position, hyperbolicDepth);
+    gl_FragDepth = hyperbolicDepth;
+
+    gBufferLinearDepth = (c.distance - zNear) / (float(zFar) - zNear);
 }
