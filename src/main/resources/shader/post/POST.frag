@@ -10,6 +10,7 @@ uniform sampler2D gBufferALBEDO;
 uniform sampler2D gBufferNORMAL;
 uniform sampler2D gBufferLinearDepth;
 uniform sampler2D gBufferPosition;
+uniform sampler2D gBufferLIGHTING;
 
 void main(){
     vec2 uv = gl_FragCoord.xy/iResolution.xy;
@@ -27,15 +28,22 @@ void main(){
             FragColor = vec4(texture(gBufferLinearDepth, uv).r, 0., 0., 1.);
             return;
         }
+        if(debugDisplayMode == 4){
+            FragColor = texture(gBufferLIGHTING, uv);
+            return;
+        }
     }
 
     vec3 albedo = texture(gBufferALBEDO, uv).rgb;
     vec3 normal = texture(gBufferNORMAL, uv).rgb;
     float linearDepth = texture(gBufferLinearDepth, uv).r;
+    vec3 light = texture(gBufferLIGHTING, uv).rgb;
 
     if(normal.x > .9) albedo.xyz *= 0.5;
     if(normal.y > .9) albedo.xyz *= 1.0;
     if(normal.z > .9) albedo.xyz *= 0.75;
+
+    albedo *= light;
 
     FragColor = vec4(albedo, 1.);
 }

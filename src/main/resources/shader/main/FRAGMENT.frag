@@ -4,6 +4,7 @@ layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
 layout (location = 2) out float gBufferLinearDepth;
 layout (location = 3) out vec4 gBufferPosition;
+layout (location = 4) out vec3 gBufferLIGHTING;
 
 in vec3 uvData;
 in vec3 fragPos;
@@ -32,11 +33,14 @@ struct DDAResult{
     bvec3 normal;
     float distance;
     vec3 position;
+    float ao;
 };
 
 bool isNear(float a, float b){
     return abs(a-b) < .01;
 }
+
+float sum(vec3 v) { return dot(v, vec3(1.0)); }
 
 vec4 getVoxelAtXYZ(int x, int y, int z){
     if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(0., 1., 0., 0.);
@@ -50,7 +54,28 @@ vec4 getVoxelAtXYZ(int x, int y, int z){
     );
 }
 
+bool getIfVoxelAtXYZ(vec3 p){
+    return getVoxelAtXYZ(int(p.x), int(p.y), int(p.z)).a > 0.9;
+}
+
+float calcVertexAo(vec2 side, float corner) {
+    //if (side.x == 1.0 && side.y == 1.0) return 1.0;
+    return (side.x + side.y + max(corner, side.x * side.y)) / 3.0;
+}
+
+vec4 calcVoxelAo(vec3 pos, vec3 d1, vec3 d2) {
+    vec4 side = vec4(getIfVoxelAtXYZ(pos + d1), getIfVoxelAtXYZ(pos + d2), getIfVoxelAtXYZ(pos - d1), getIfVoxelAtXYZ(pos - d2));
+    vec4 corner = vec4(getIfVoxelAtXYZ(pos + d1 + d2), getIfVoxelAtXYZ(pos - d1 + d2), getIfVoxelAtXYZ(pos - d1 - d2), getIfVoxelAtXYZ(pos + d1 - d2));
+    vec4 ao;
+    ao.x = calcVertexAo(side.xy, corner.x);
+    ao.y = calcVertexAo(side.yz, corner.y);
+    ao.z = calcVertexAo(side.zw, corner.z);
+    ao.w = calcVertexAo(side.wx, corner.w);
+    return 1.0 - ao;
+}
+
 DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
+    // DDA
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -69,10 +94,22 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
         mapPos += rayStep * ivec3(mask);
     }
 
-    vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
-    return DDAResult(voxel, mask, length(position - pos), pos);
-}
+    // AO
+    vec3 intersectPlane = mapPos + vec3(lessThan(rayDir, vec3(0)));
+    vec3 endRayPos;
+    vec2 uv;
+    vec4 ambient;
+    ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
+    endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
+    aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.0)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.0))), vec2(1.0));
+    float ao = mix(mix(ambient.z, ambient.w, aouv.x), mix(ambient.y, ambient.x, aouv.x), aouv.y);
+    ao = pow(ao, 1.0 / 3.0);
 
+    // DISTANCE
+    vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
+
+    return DDAResult(voxel, mask, length(position - pos), pos, ao);
+}
 
 void main(){
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
@@ -139,4 +176,6 @@ void main(){
     gl_FragDepth = hyperbolicDepth;
 
     gBufferLinearDepth = (c.distance - zNear) / (float(zFar) - zNear);
+
+    gBufferLIGHTING = vec3(c.ao);
 }

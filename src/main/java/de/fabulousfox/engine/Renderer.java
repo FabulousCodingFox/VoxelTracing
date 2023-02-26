@@ -42,7 +42,7 @@ public class Renderer {
     private int VAO_POST;
     private int VBO_POST;
 
-    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth;
+    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth, gBufferLIGHTING;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle){
         this.windowWidth = windowWidth;
@@ -222,7 +222,14 @@ public class Renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gBufferPOSITION, 0);
 
-        int[] attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+        gBufferLIGHTING = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferLIGHTING);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gBufferLIGHTING, 0);
+
+        int[] attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
         glDrawBuffers(attachments);
 
         gBufferRboDepth = glGenRenderbuffers();
@@ -238,7 +245,8 @@ public class Renderer {
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        models.addAll(VoxelLoader.load("/models/teapot.vox"));
     }
 
     public boolean shouldClose(){
@@ -316,6 +324,10 @@ public class Renderer {
         glActiveTexture(GL_TEXTURE13);
         glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
         SHADER_POST.setInt("gBufferPOSITION", 13);
+
+        glActiveTexture(GL_TEXTURE14);
+        glBindTexture(GL_TEXTURE_2D, gBufferLIGHTING);
+        SHADER_POST.setInt("gBufferLIGHTING", 14);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
