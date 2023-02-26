@@ -119,6 +119,16 @@ public class Shader {
         glUniform3fv(glGetUniformLocation(ID, name),new float[]{value.x, value.y, value.z} );
     }
 
+    public void setVector3fArray(String name, Vector3f[] value) {
+        float[] data = new float[value.length*3];
+        for(int i = 0; i < value.length; i++) {
+            data[i*3] = value[i].x;
+            data[i*3+1] = value[i].y;
+            data[i*3+2] = value[i].z;
+        }
+        glUniform3fv(glGetUniformLocation(ID, name), data);
+    }
+
     /*
         * Delete the shader program.
     */
