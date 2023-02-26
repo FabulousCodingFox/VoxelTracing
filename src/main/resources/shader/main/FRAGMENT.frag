@@ -15,6 +15,8 @@ uniform vec3 modelPosition;
 uniform vec3 position;
 uniform vec3 direction;
 
+layout(rgba16f) uniform imageBuffer BUFFER_ALBEDO;
+
 const int accuracy = 3;
 const int raycastExpandHitbox = 3;
 
@@ -30,14 +32,7 @@ bool isNear(float a, float b){
 
 vec4 getVoxelAtXYZ(int x, int y, int z){
     if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(0., 1., 0., 0.);
-    return texture(
-        dataContainer,
-        vec3(
-            float(x) / float(sizeX),
-            float(y) / float(sizeY),
-            float(z) / float(sizeZ)
-        )
-    );
+    return texelFetch(dataContainer, ivec3(x, y, z), 0);
 }
 
 vec4 raycast(vec3 rayPos, vec3 rayDir){
@@ -74,19 +69,9 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
         mapPos += rayStep * ivec3(mask);
     }
 
-    if (mask.x) {
-        voxel.xyz *= 0.5;
-    }
-    if (mask.y) {
-        voxel.xyz *= 1.0;
-    }
-    if (mask.z) {
-        voxel.xyz *= 0.75;
-    }
-
-    return DDAResult(voxel, mask, 0.);
+    vec3 worldPos = (vec3(mapPos) + rayPos) * voxelSize;
+    return DDAResult(voxel, mask, length(position - worldPos));
 }
-
 
 void main(){
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
@@ -144,5 +129,12 @@ void main(){
 
     DDAResult c = raycastDDA(start, dir);
     if(c.color.a < .5) discard;
+
+    if(c.normal.x) c.color.xyz *= 0.5;
+    if(c.normal.y) c.color.xyz *= 1.0;
+    if(c.normal.z) c.color.xyz *= 0.75;
+
     FragColor = c.color;
+    //FragColor = vec4(vec3(1 - (c.distance / 5)), 1.);
+    //FragColor = vec4(vec3(c.normal), 1.);
 }

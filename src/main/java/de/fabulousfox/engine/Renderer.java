@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL46.*;
+import static org.lwjgl.opengl.GL33.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -40,6 +40,11 @@ public class Renderer {
 
     private int VAO_POST;
     private int VBO_POST;
+
+    private ShaderWriteableTextureBuffer SSBO_DEPTH;
+    private ShaderWriteableTextureBuffer SSBO_LINEAR_DEPTH;
+    private ShaderWriteableTextureBuffer SSBO_NORMAL;
+    private ShaderWriteableTextureBuffer SSBO_ALBEDO;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle){
         this.windowWidth = windowWidth;
@@ -214,6 +219,15 @@ public class Renderer {
 
         //////////////////////////////////////////////////////////////////////////////////////
 
+        System.out.println("Initializing SSBO OpenGL Context...");
+
+        SSBO_ALBEDO = new ShaderWriteableTextureBuffer(4 * 16 * windowWidth * windowHeight, GL_DYNAMIC_DRAW, GL_RGBA16);
+        SSBO_NORMAL = new ShaderWriteableTextureBuffer(3 * 8 * windowWidth * windowHeight, GL_DYNAMIC_DRAW, GL_RGB8);
+        SSBO_LINEAR_DEPTH = new ShaderWriteableTextureBuffer(1 * 16 * windowWidth * windowHeight, GL_DYNAMIC_DRAW, GL_R16);
+        SSBO_DEPTH = new ShaderWriteableTextureBuffer(1 * 32 * windowWidth * windowHeight, GL_DYNAMIC_DRAW, GL_DEPTH32F_STENCIL8);
+
+        //////////////////////////////////////////////////////////////////////////////////////
+
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
@@ -256,15 +270,20 @@ public class Renderer {
         s.setVector3f("position", position);
         s.setVector3f("rotation", direction.normalize());
 
-        for(Model model : models){
+        SSBO_ALBEDO.bind(s, "BUFFER_ALBEDO", 5);
+        SSBO_NORMAL.bind(s, "BUFFER_NORMAL", 6);
+        SSBO_LINEAR_DEPTH.bind(s, "BUFFER_LINEAR_DEPTH", 7);
+        SSBO_DEPTH.bind(s, "BUFFER_DEPTH", 8);
+
+        models.sort(Comparator.comparingDouble(m -> m.getBoundingBoxDistance(position)));
+
+        for(int m = 0; m < models.size(); m++){
+            Model model = models.get(models.size() - m - 1);
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
             model.prepareShader(s);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
-
-            //Vector3f pos = new Vector3f(model.getPosition()).sub(position).mul(Model.VOXEL_SIZE).mul;
-            //System.out.println((int)pos.x + " " + (int)pos.y + " " + (int)pos.z);
         }
 
         // Second Pass
@@ -349,5 +368,9 @@ public class Renderer {
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);
         glfwTerminate();
+        SSBO_LINEAR_DEPTH.destroy();
+        SSBO_ALBEDO.destroy();
+        SSBO_NORMAL.destroy();
+        SSBO_DEPTH.destroy();
     }
 }

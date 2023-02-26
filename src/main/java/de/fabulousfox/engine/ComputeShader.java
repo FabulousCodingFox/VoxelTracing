@@ -1,6 +1,6 @@
 package de.fabulousfox.engine;
 
-import static org.lwjgl.opengl.GL46.*;
+import static org.lwjgl.opengl.GL33.*;
 
 public class ComputeShader {
     private int compute;

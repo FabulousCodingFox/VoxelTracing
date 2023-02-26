@@ -3,7 +3,7 @@ package de.fabulousfox.engine;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import static org.lwjgl.opengl.GL46.*;
+import static org.lwjgl.opengl.GL33.*;
 
 public class Model {
     public static final float VOXEL_SIZE = 0.05f;
@@ -14,9 +14,14 @@ public class Model {
     private final Vector3f position;
 
     private final Texture3D data;
+
     private final int sizeX;
     private final int sizeY;
     private final int sizeZ;
+
+    private final float dimX;
+    private final float dimY;
+    private final float dimZ;
 
     private int vao, vbo;
 
@@ -31,9 +36,9 @@ public class Model {
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
 
-        final float dimX = sizeX * VOXEL_SIZE;
-        final float dimY = sizeY * VOXEL_SIZE;
-        final float dimZ = sizeZ * VOXEL_SIZE;
+        dimX = sizeX * VOXEL_SIZE;
+        dimY = sizeY * VOXEL_SIZE;
+        dimZ = sizeZ * VOXEL_SIZE;
 
         float[] vertices = {
                 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
@@ -85,8 +90,10 @@ public class Model {
         vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+
         glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+3)*4, 0);
         glEnableVertexAttribArray(0); // Position
+
         glVertexAttribPointer(1, 3, GL_FLOAT, false, (3+3)*4, 4*(3));
         glEnableVertexAttribArray(1); // UV
 
@@ -127,5 +134,12 @@ public class Model {
 
     public Vector3f getSize() {
         return new Vector3f(sizeX, sizeY, sizeZ);
+    }
+
+    public double getBoundingBoxDistance(Vector3f point){
+        double positionX = point.x < position.x ? position.x : Math.min(point.x, position.x + dimX);
+        double positionY = point.y < position.y ? position.y : Math.min(point.y, position.y + dimY);
+        double positionZ = point.z < position.z ? position.z : Math.min(point.z, position.z + dimZ);
+        return Math.sqrt(Math.pow(positionX - point.x, 2) + Math.pow(positionY - point.y, 2) + Math.pow(positionZ - point.z, 2));
     }
 }
