@@ -3,20 +3,16 @@ package de.fabulousfox.engine;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Random;
 
-import static org.joml.Math.lerp;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -37,7 +33,7 @@ public class Renderer {
 
     private double lastMouseXP, lastMouseYP, mouseOffX, mouseOffY;
 
-    private final Shader SHADER_GRID, SHADER_POST, SHADER_SSAO, SHADER_SSAO_BLUR;
+    private final Shader SHADER_GRID, SHADER_POST;
 
     private ArrayList<Model> models;
 
@@ -45,9 +41,6 @@ public class Renderer {
     private int VBO_POST;
 
     private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth;
-
-    private Vector3f[] ssaoKernel, ssaoNoise;
-    private int ssaoNoiseTexture, ssaoFramebuffer, ssaoColorbuffer, ssaoBlurFramebuffer, ssaoBlurColorbuffer;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle){
         this.windowWidth = windowWidth;
@@ -184,16 +177,6 @@ public class Renderer {
                 "shader/post/POST.vert",
                 "shader/post/POST.frag"
         );
-        System.out.println("SHADER_SSAO");
-        SHADER_SSAO = new Shader(
-                "shader/post/POST.vert",
-                "shader/post/SSAO.frag"
-        );
-        System.out.println("SHADER_SSAO_BLUR");
-        SHADER_SSAO_BLUR = new Shader(
-                "shader/post/POST.vert",
-                "shader/post/SSAO_BLUR.frag"
-        );
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -250,71 +233,6 @@ public class Renderer {
 
         //////////////////////////////////////////////////////////////////////////////////////
 
-        System.out.println("Initializing SSAO...");
-
-        Random random = new Random();
-
-        ssaoKernel = new Vector3f[64];
-        for(int i = 0; i < 64; i++) {
-            Vector3f sample = new Vector3f(
-                    (random.nextFloat() * 2.0f) - 1.0f,
-                    (random.nextFloat() * 2.0f) - 1.0f,
-                    random.nextFloat()
-            );
-            sample.normalize();
-            sample.mul(random.nextFloat());
-            float scale = (float) i / 64.0f;
-            scale = lerp(0.1f, 1.0f, scale * scale);
-            sample.mul(scale);
-            ssaoKernel[i] = sample;
-        }
-
-        ssaoNoise = new Vector3f[16];
-        for(int i = 0; i < 16; i++) {
-            Vector3f noise = new Vector3f(
-                    (random.nextFloat() * 2.0f) - 1.0f,
-                    (random.nextFloat() * 2.0f) - 1.0f,
-                    0.0f
-            );
-            ssaoNoise[i] = noise;
-        }
-
-        ssaoNoiseTexture = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, ssaoNoiseTexture);
-        ByteBuffer buffer = BufferUtils.createByteBuffer(16 * 3 * 4);
-        for(int i = 0; i < 16; i++) {
-            buffer.putFloat(ssaoNoise[i].x);
-            buffer.putFloat(ssaoNoise[i].y);
-            buffer.putFloat(ssaoNoise[i].z);
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, buffer);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        ssaoFramebuffer = glGenFramebuffers();
-        glBindFramebuffer(GL_FRAMEBUFFER, ssaoFramebuffer);
-
-        ssaoColorbuffer = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, ssaoColorbuffer);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorbuffer, 0);
-
-        ssaoBlurFramebuffer = glGenFramebuffers();
-        glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFramebuffer);
-        ssaoBlurColorbuffer = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, ssaoBlurColorbuffer);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBlurColorbuffer, 0);
-
-        //////////////////////////////////////////////////////////////////////////////////////
-
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
@@ -365,73 +283,6 @@ public class Renderer {
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // SSAO Pass
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        glBindFramebuffer(GL_FRAMEBUFFER, ssaoFramebuffer);
-
-        glDisable(GL_DEPTH_TEST);
-        //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        SHADER_SSAO.use();
-
-        glActiveTexture(GL_TEXTURE10);
-        glBindTexture(GL_TEXTURE_2D, gBufferALBEDO);
-        SHADER_SSAO.setInt("gBufferALBEDO", 10);
-
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_2D, gBufferNORMAL);
-        SHADER_SSAO.setInt("gBufferNORMAL", 11);
-
-        glActiveTexture(GL_TEXTURE12);
-        glBindTexture(GL_TEXTURE_2D, gBufferLinearDepth);
-        SHADER_SSAO.setInt("gBufferLinearDepth", 12);
-
-        glActiveTexture(GL_TEXTURE13);
-        glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
-        SHADER_SSAO.setInt("gBufferPOSITION", 13);
-
-        glActiveTexture(GL_TEXTURE14);
-        glBindTexture(GL_TEXTURE_2D, ssaoNoiseTexture);
-        SHADER_SSAO.setInt("bufferSSAONoise", 14);
-
-        SHADER_SSAO.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-
-        SHADER_SSAO.setMatrix4f("projection", projectionMatrix);
-        SHADER_SSAO.setVector3fArray("samples", ssaoKernel);
-
-        glBindVertexArray(VAO_POST);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // SSAO Blur Pass
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFramebuffer);
-
-        glDisable(GL_DEPTH_TEST);
-        //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        SHADER_SSAO_BLUR.use();
-
-        glActiveTexture(GL_TEXTURE10);
-        glBindTexture(GL_TEXTURE_2D, ssaoColorbuffer);
-        SHADER_SSAO_BLUR.setInt("ssaoInput", 10);
-
-        SHADER_SSAO_BLUR.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-
-        glBindVertexArray(VAO_POST);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Final Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -463,10 +314,6 @@ public class Renderer {
         glActiveTexture(GL_TEXTURE13);
         glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
         SHADER_POST.setInt("gBufferPOSITION", 13);
-
-        glActiveTexture(GL_TEXTURE14);
-        glBindTexture(GL_TEXTURE_2D, ssaoBlurColorbuffer);
-        SHADER_POST.setInt("bufferSSAO", 14);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
