@@ -74,36 +74,37 @@ vec4 calcVoxelAo(vec3 pos, vec3 d1, vec3 d2) {
     return 1.0 - ao;
 }
 
-DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
+DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     // DDA
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
-    vec4 voxel = vec4(0., 1., 0., 0.);
-    bvec3 mask;
+    vec4 voxel = vec4(0.);
+    float ao = 1.;
 
     for (int i = 0; i < sizeX + sizeY + sizeZ; i++){
         if(mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
 
         voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
-        if(voxel.a > 0.999) break;
+        if(voxel.a > 0.999){
+            // AO
+            vec3 intersectPlane = mapPos + vec3(lessThan(rayDir, vec3(0)));
+            vec3 endRayPos;
+            vec2 uv;
+            vec4 ambient;
+            ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
+            endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
+            vec2 aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.0)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.0))), vec2(1.0));
+            ao = mix(mix(ambient.z, ambient.w, aouv.x), mix(ambient.y, ambient.x, aouv.x), aouv.y);
+            ao = pow(ao, 1.0 / 3.0);
+            break;
+        }
 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         sideDist += deltaDist * vec3(mask);
         mapPos += rayStep * ivec3(mask);
     }
-
-    // AO
-    vec3 intersectPlane = mapPos + vec3(lessThan(rayDir, vec3(0)));
-    vec3 endRayPos;
-    vec2 uv;
-    vec4 ambient;
-    ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
-    endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
-    aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.0)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.0))), vec2(1.0));
-    float ao = mix(mix(ambient.z, ambient.w, aouv.x), mix(ambient.y, ambient.x, aouv.x), aouv.y);
-    ao = pow(ao, 1.0 / 3.0);
 
     // DISTANCE
     vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
@@ -123,49 +124,56 @@ void main(){
     vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
     dir.z = -dir.z;
     vec3 start;
+    bvec3 mask;
 
     if(playerOutsideOfBox){
         if (isNear(normal, 0.)){
             float pixelX = uv.x * float(sizeX);
             float pixelY = uv.y * float(sizeY);
             start = vec3(pixelX, pixelY, 0.);
+            mask = bvec3(false, false, true);
         }
 
         if (isNear(normal, 1.)){
             float pixelX = uv.x * float(sizeX);
             float pixelY = uv.y * float(sizeY);
             start = vec3(pixelX, pixelY, sizeZ);
+            mask = bvec3(false, false, true);
         }
 
         if (isNear(normal, 2.)){
             float pixelZ = uv.x * float(sizeZ);
             float pixelY = uv.y * float(sizeY);
             start = vec3(sizeX, sizeY - pixelY, pixelZ);
+            mask = bvec3(true, false, false);
         }
 
         if (isNear(normal, 3.)){
             float pixelZ = uv.x * float(sizeZ);
             float pixelY = uv.y * float(sizeY);
             start = vec3(0., sizeY - pixelY, sizeZ - pixelZ);
+            mask = bvec3(true, false, false);
         }
 
         if (isNear(normal, 4.)){
             float pixelX = uv.x * float(sizeX);
             float pixelZ = uv.y * float(sizeZ);
             start = vec3(pixelX, sizeY, pixelZ);
+            mask = bvec3(false, true, false);
         }
 
         if (isNear(normal, 5.)){
             float pixelX = uv.x * float(sizeX);
             float pixelZ = uv.y * float(sizeZ);
             start = vec3(pixelX, 0., pixelZ);
+            mask = bvec3(false, true, false);
         }
     }else{
         start = playerOffset;
         start.z = sizeZ - start.z;
     }
 
-    DDAResult c = raycastDDA(start, dir);
+    DDAResult c = raycastDDA(start, dir, mask);
     if(c.color.a < .5) discard;
 
     gBufferALBEDO = c.color;
@@ -175,7 +183,7 @@ void main(){
     gBufferPosition = vec4(c.position, hyperbolicDepth);
     gl_FragDepth = hyperbolicDepth;
 
-    gBufferLinearDepth = (c.distance - zNear) / (float(zFar) - zNear);
+    gBufferLinearDepth = (c.distance - zNear) / (float(10) - zNear);
 
     gBufferLIGHTING = vec3(c.ao);
 }
