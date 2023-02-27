@@ -42,7 +42,7 @@ public class Renderer {
     private int VAO_POST;
     private int VBO_POST;
 
-    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLinearDepth, gBufferLIGHTING;
+    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle){
         this.windowWidth = windowWidth;
@@ -208,12 +208,12 @@ public class Renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gBufferNORMAL, 0);
 
-        gBufferLinearDepth = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, gBufferLinearDepth);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, windowWidth, windowHeight, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        gBufferMATERIAL = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferMATERIAL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, windowWidth, windowHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBufferLinearDepth, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBufferMATERIAL, 0);
 
         gBufferPOSITION = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
@@ -246,7 +246,7 @@ public class Renderer {
 
         models = new ArrayList<>();
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
-        models.addAll(VoxelLoader.load("/models/chest.vox"));
+        models.addAll(VoxelLoader.load("/models/menger.vox"));
     }
 
     public boolean shouldClose(){
@@ -311,6 +311,7 @@ public class Renderer {
         if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) debugDisplayMode = 2;
         if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) debugDisplayMode = 3;
         if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) debugDisplayMode = 4;
+        if(glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) debugDisplayMode = 5;
         SHADER_POST.setInt("debugDisplayMode", debugDisplayMode);
 
         glActiveTexture(GL_TEXTURE10);
@@ -322,8 +323,8 @@ public class Renderer {
         SHADER_POST.setInt("gBufferNORMAL", 11);
 
         glActiveTexture(GL_TEXTURE12);
-        glBindTexture(GL_TEXTURE_2D, gBufferLinearDepth);
-        SHADER_POST.setInt("gBufferLinearDepth", 12);
+        glBindTexture(GL_TEXTURE_2D, gBufferMATERIAL);
+        SHADER_POST.setInt("gBufferMATERIAL", 12);
 
         glActiveTexture(GL_TEXTURE13);
         glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
@@ -332,6 +333,10 @@ public class Renderer {
         glActiveTexture(GL_TEXTURE14);
         glBindTexture(GL_TEXTURE_2D, gBufferLIGHTING);
         SHADER_POST.setInt("gBufferLIGHTING", 14);
+
+        glActiveTexture(GL_TEXTURE15);
+        glBindTexture(GL_TEXTURE_2D, gBufferRboDepth);
+        SHADER_POST.setInt("gBufferDEPTH", 15);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
@@ -408,7 +413,7 @@ public class Renderer {
         glDeleteFramebuffers(gBuffer);
         glDeleteTextures(gBufferALBEDO);
         glDeleteTextures(gBufferNORMAL);
-        glDeleteTextures(gBufferLinearDepth);
+        glDeleteTextures(gBufferMATERIAL);
 
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);

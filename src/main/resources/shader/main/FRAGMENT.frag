@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
-layout (location = 2) out float gBufferLinearDepth;
+layout (location = 2) out vec4 gBufferMATERIAL;
 layout (location = 3) out vec4 gBufferPosition;
 layout (location = 4) out vec3 gBufferLIGHTING;
 
@@ -175,13 +175,13 @@ void main(){
 
     gBufferALBEDO = c.color;
     gBufferNORMAL = vec3(c.normal);
+    gBufferLIGHTING = vec3(c.ao);
+
+    gBufferMATERIAL = vec4(0., 0., 0., 0.);
 
     float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
     if(hyperbolicDepth < texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
     gBufferPosition = vec4(c.position, hyperbolicDepth);
     gl_FragDepth = hyperbolicDepth;
 
-    gBufferLinearDepth = (c.distance - zNear) / (float(10) - zNear);
-
-    gBufferLIGHTING = vec3(c.ao);
 }
