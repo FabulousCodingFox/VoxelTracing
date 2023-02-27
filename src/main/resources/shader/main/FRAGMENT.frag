@@ -11,6 +11,8 @@ in vec3 fragPos;
 
 uniform sampler3D dataContainer;
 
+uniform sampler2D gBufferDEPTH;
+
 uniform int sizeX;
 uniform int sizeY;
 uniform int sizeZ;
@@ -113,6 +115,8 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
 }
 
 void main(){
+    if(gl_FragCoord.z < texelFetch(gBufferDEPTH, gl_FragCoord.x, gl_FragCoord.y)) discard;
+
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
     bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
     if(playerOutsideOfBox != gl_FrontFacing) discard;

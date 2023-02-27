@@ -283,6 +283,10 @@ public class Renderer {
         models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
 
         for(Model model : models) {
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, gBufferRboDepth);
+            SHADER_POST.setInt("gBufferDEPTH", 10);
+
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
             model.prepareShader(SHADER_GRID);
