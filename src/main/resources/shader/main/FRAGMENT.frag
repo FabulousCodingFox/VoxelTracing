@@ -46,14 +46,7 @@ float sum(vec3 v) { return dot(v, vec3(1.0)); }
 
 vec4 getVoxelAtXYZ(int x, int y, int z){
     if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(0., 1., 0., 0.);
-    return texture(
-        dataContainer,
-        vec3(
-            float(x) / float(sizeX),
-            float(y) / float(sizeY),
-            float(z) / float(sizeZ)
-        )
-    );
+    return texelFetch(dataContainer, ivec3(x, y, z), 0);
 }
 
 bool getIfVoxelAtXYZ(vec3 p){
@@ -115,7 +108,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
 }
 
 void main(){
-    if(gl_FragCoord.z < texelFetch(gBufferDEPTH, gl_FragCoord.x, gl_FragCoord.y)) discard;
+    if(gl_FragCoord.z < texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
 
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
     bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
@@ -184,6 +177,7 @@ void main(){
     gBufferNORMAL = vec3(c.normal);
 
     float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+    if(hyperbolicDepth < texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
     gBufferPosition = vec4(c.position, hyperbolicDepth);
     gl_FragDepth = hyperbolicDepth;
 
