@@ -177,7 +177,11 @@ void main(){
     gBufferNORMAL = vec3(c.normal);
     gBufferLIGHTING = vec3(c.ao);
 
-    gBufferMATERIAL = vec4(0., 0., 0., 0.);
+    gBufferMATERIAL = vec4(0., 0., 1., 0.);
+
+    if(isNear(gBufferALBEDO.y, .0)){
+        gBufferMATERIAL.x = 1.;
+    }
 
     float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
     if(hyperbolicDepth < texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
