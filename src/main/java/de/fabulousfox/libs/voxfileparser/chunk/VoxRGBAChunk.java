@@ -8,7 +8,7 @@ import java.io.OutputStream;
 
 public final class VoxRGBAChunk extends VoxChunk {
 	
-    static final int[] DEFAULT_PALETTE = new int[] {
+    public static final int[] DEFAULT_PALETTE = new int[] {
         0x00000000, 0xFFFFFFFF, 0xFFCCFFFF, 0xFF99FFFF, 0xFF66FFFF, 0xFF33FFFF,
         0xFF00FFFF, 0xFFFFCCFF, 0xFFCCCCFF, 0xFF99CCFF, 0xFF66CCFF, 0xFF33CCFF,
         0xFF00CCFF, 0xFFFF99FF, 0xFFCC99FF, 0xFF9999FF, 0xFF6699FF, 0xFF3399FF,

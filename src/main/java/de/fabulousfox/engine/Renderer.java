@@ -246,7 +246,7 @@ public class Renderer {
 
         models = new ArrayList<>();
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
-        models.addAll(VoxelLoader.load("/models/teapot.vox"));
+        models.addAll(VoxelLoader.load("/models/chest.vox"));
     }
 
     public boolean shouldClose(){
