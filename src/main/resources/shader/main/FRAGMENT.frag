@@ -108,7 +108,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
 }
 
 void main(){
-    if(gl_FragCoord.z < texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
+    //if(gl_FragCoord.z > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
 
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
     bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
@@ -178,13 +178,14 @@ void main(){
     gBufferLIGHTING = vec3(c.ao);
 
     gBufferMATERIAL = vec4(0., 0., 1., 0.);
-
     if(isNear(gBufferALBEDO.y, .0)){
         gBufferMATERIAL.x = 1.;
     }
 
+    gBufferALBEDO = vec4(vec3(texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r), 1.);
+
     float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
-    if(hyperbolicDepth < texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
+    //if(hyperbolicDepth > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
     gBufferPosition = vec4(c.position, hyperbolicDepth);
     gl_FragDepth = hyperbolicDepth;
 
