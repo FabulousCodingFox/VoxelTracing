@@ -106,7 +106,7 @@ public class Shader {
      * @param value The value of the uniform variable.
      */
     public void setMatrix4f(String name, Matrix4f value) {
-        glUniformMatrix4fv(glGetUniformLocation(ID, name), false, value.get(new float[16]));
+        glUniformMatrix4fv(glGetUniformLocation(ID, name), false, value.get(new float[4 * 4]));
     }
 
     /*

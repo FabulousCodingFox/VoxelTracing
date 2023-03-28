@@ -10,6 +10,7 @@ import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL46;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
@@ -20,6 +21,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.system.MemoryUtil.memUTF8;
 
 public class Renderer {
     private final int ZFAR = 2147483647;
@@ -113,7 +115,7 @@ public class Renderer {
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-        });
+        });;
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -137,6 +139,10 @@ public class Renderer {
             );
         }
 
+        glfwSetErrorCallback((window, error) -> {
+            System.err.println("GLFW Error: " + error);
+        });
+
         //////////////////////////////////////////////////////////////////////////////////////
 
         System.out.println("Initializing GLFW OpenGL Context...");
@@ -145,6 +151,56 @@ public class Renderer {
         glfwShowWindow(window);
 
         GL.createCapabilities();
+
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback((source, type, id, severity, length, message, userParam) -> {
+            String pType = switch (type) {
+                case GL_DEBUG_TYPE_ERROR -> "ERROR";
+                case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR -> "DEPRECATED_BEHAVIOR";
+                case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR -> "UNDEFINED_BEHAVIOR";
+                case GL_DEBUG_TYPE_PORTABILITY -> "PORTABILITY";
+                case GL_DEBUG_TYPE_PERFORMANCE -> "PERFORMANCE";
+                case GL_DEBUG_TYPE_MARKER -> "MARKER";
+                case GL_DEBUG_TYPE_PUSH_GROUP -> "PUSH_GROUP";
+                case GL_DEBUG_TYPE_POP_GROUP -> "POP_GROUP";
+                case GL_DEBUG_TYPE_OTHER -> "OTHER";
+                default -> type + "";
+            };
+
+            String pSeverity = switch (severity) {
+                case GL_DEBUG_SEVERITY_HIGH -> "HIGH";
+                case GL_DEBUG_SEVERITY_MEDIUM -> "MEDIUM";
+                case GL_DEBUG_SEVERITY_LOW -> "LOW";
+                case GL_DEBUG_SEVERITY_NOTIFICATION -> "NOTIFICATION";
+                default -> severity + "";
+            };
+
+            String pID = switch (id) {
+                case GL_INVALID_VALUE -> "INVALID_VALUE";
+                case GL_INVALID_FRAMEBUFFER_OPERATION -> "INVALID_FRAMEBUFFER_OPERATION";
+                case GL_INVALID_OPERATION -> "INVALID_OPERATION";
+                case GL_STACK_OVERFLOW -> "STACK_OVERFLOW";
+                case GL_STACK_UNDERFLOW -> "STACK_UNDERFLOW";
+                case GL_OUT_OF_MEMORY -> "OUT_OF_MEMORY";
+                case GL_INVALID_ENUM -> "INVALID_ENUM";
+                case GL_CONTEXT_LOST -> "CONTEXT_LOST";
+                case GL_DEBUG_SEVERITY_NOTIFICATION -> "NOTIFICATION";
+                default -> id + "";
+            };
+
+            String pSource = switch (source) {
+                case GL_DEBUG_SOURCE_API -> "API";
+                case GL_DEBUG_SOURCE_WINDOW_SYSTEM -> "WINDOW_SYSTEM";
+                case GL_DEBUG_SOURCE_SHADER_COMPILER -> "SHADER_COMPILER";
+                case GL_DEBUG_SOURCE_THIRD_PARTY -> "THIRD_PARTY";
+                case GL_DEBUG_SOURCE_APPLICATION -> "APPLICATION";
+                case GL_DEBUG_SOURCE_OTHER -> "OTHER";
+                default -> source + "";
+            };
+
+            System.out.println("OpenGL ["+pSource+"]["+pType+"]["+pSeverity+"]["+pID+"]: " + memUTF8(message));
+        }, NULL);
+
 
         glEnable(GL_TEXTURE_2D);
 
@@ -297,8 +353,7 @@ public class Renderer {
         models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
 
         for (Model model : models) {
-            glActiveTexture(GL_TEXTURE10);
-            glBindTexture(GL_TEXTURE_2D, gBufferDEPTH.get());
+            gBufferDEPTH.bind(10);
             SHADER_POST.setInt("gBufferDEPTH", 10);
 
             glActiveTexture(GL_TEXTURE5);

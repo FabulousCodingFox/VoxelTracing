@@ -198,7 +198,7 @@ void main(){
     gBufferPosition = vec4(c.position, hyperbolicDepth);
     gl_FragDepth = hyperbolicDepth;
 
-    storeFloatImageDEPTH(gl_FragCoord.xy, hyperbolicDepth);
+    storeFloatImageDEPTH(gl_FragCoord.xy, .9);//hyperbolicDepth);
 
     //imageStore(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
     //storeFloatImage(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);

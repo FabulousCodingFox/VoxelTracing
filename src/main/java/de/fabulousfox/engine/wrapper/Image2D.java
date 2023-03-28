@@ -28,13 +28,14 @@ public class Image2D {
     public void create() {
         glActiveTexture(GL_TEXTURE5);
         texture = glGenTextures();
-        glBindTexture(GL_IMAGE_2D, texture);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_IMAGE_2D, 0, GL_R32UI, sizeX, sizeY, 0, GL_R, GL_UNSIGNED_BYTE, image);
     }
 
     public int get() {
         return texture;
+    }
+
+    public void bind(int slot) {
+        glBindImageTexture(5, texture, 0, false, 0, GL_READ_WRITE, GL_R32UI);
     }
 
     public void remove() {
