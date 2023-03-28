@@ -6,12 +6,14 @@ layout (location = 2) out vec4 gBufferMATERIAL;
 layout (location = 3) out vec4 gBufferPosition;
 layout (location = 4) out vec3 gBufferLIGHTING;
 
+layout (depth_greater) out float gl_FragDepth;
+
 in vec3 uvData;
 in vec3 fragPos;
 
 uniform sampler3D dataContainer;
 
-layout( r32i ) uniform iimage2D gBufferDEPTH;
+layout( r32ui ) uniform uimage2D gBufferDEPTH;
 
 uniform int sizeX;
 uniform int sizeY;
@@ -37,6 +39,13 @@ struct DDAResult{
     vec3 position;
     float ao;
 };
+
+
+void storeFloatImageDEPTH(vec2 texCoord, float value) {
+    ivec2 texelCoord = ivec2(texCoord * imageSize(gBufferDEPTH));
+    int intValue = floatBitsToInt(value);
+    imageAtomicExchange(gBufferDEPTH, texelCoord, intValue);
+}
 
 bool isNear(float a, float b){
     return abs(a-b) < .01;
@@ -189,4 +198,9 @@ void main(){
     gBufferPosition = vec4(c.position, hyperbolicDepth);
     gl_FragDepth = hyperbolicDepth;
 
+    storeFloatImageDEPTH(gl_FragCoord.xy, hyperbolicDepth);
+
+    //imageStore(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
+    //storeFloatImage(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
+    //imageAtomicExchange(gBufferDEPTH, ivec2(gl_FragCoord.xy), uint(intFromDecimalPlaces(hyperbolicDepth)));
 }

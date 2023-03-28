@@ -2,7 +2,7 @@ package de.fabulousfox.engine;
 
 import de.fabulousfox.engine.utils.Key;
 import de.fabulousfox.engine.wrapper.Shader;
-import de.fabulousfox.engine.wrapper.Texture2D;
+import de.fabulousfox.engine.wrapper.Image2D;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -44,7 +44,7 @@ public class Renderer {
     private int VBO_POST;
 
     private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING;
-    private Texture2D gBufferDEPTH;
+    private Image2D gBufferDEPTH;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
@@ -248,7 +248,8 @@ public class Renderer {
             throw new RuntimeException("Framebuffer not complete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        gBufferDEPTH = new Texture2D(windowWidth, windowHeight);
+        gBufferDEPTH = new Image2D(windowWidth, windowHeight);
+        gBufferDEPTH.create();
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -271,6 +272,7 @@ public class Renderer {
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         glEnable(GL_DEPTH_TEST);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -421,11 +423,14 @@ public class Renderer {
         }
         SHADER_GRID.delete();
         SHADER_POST.delete();
+        SHADER_GRID_DEBUG_CUBE.delete();
 
         glDeleteFramebuffers(gBuffer);
         glDeleteTextures(gBufferALBEDO);
         glDeleteTextures(gBufferNORMAL);
         glDeleteTextures(gBufferMATERIAL);
+
+        gBufferDEPTH.remove();
 
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);

@@ -34,7 +34,9 @@ void main(){
             return;
         }
         if(debugDisplayMode == 5){
-            FragColor = vec4(vec3(texture(gBufferDEPTH, uv).r), 1.);
+            //float depth = float(texture(gBufferPosition, uv).r) / 4294967296.0; // 2^32
+            FragColor = vec4(vec3(texture(gBufferDEPTH, uv).r / 4294967296.), 1.);
+            //FragColor = vec4(vec3(texture(gBufferPosition, uv).z), 1.);
             return;
         }
     }
