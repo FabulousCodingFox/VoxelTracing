@@ -91,22 +91,6 @@ public class Renderer {
             this.windowHeight = height;
             glViewport(0, 0, width, height);
             projectionMatrix = getProjectionMatrix();
-
-            // Resize Framebuffer
-            /*glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER, 0);
-            glBindRenderbuffer(GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindRenderbuffer(GL_RENDERBUFFER, 0);*/
         });
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -146,10 +130,6 @@ public class Renderer {
 
         glEnable(GL_TEXTURE_2D);
 
-        //glEnable(GL_CULL_FACE);
-        //glCullFace(GL_FRONT);
-        glFrontFace(GL_CW);
-
         float[] quadVertices = {
                 -1.0f,  1.0f,
                 -1.0f, -1.0f,
@@ -172,7 +152,7 @@ public class Renderer {
         System.out.println("SHADER_GRID_DEBUG");
         SHADER_GRID = new Shader(
                 "shader/main/VERT.vert",
-                "shader/main/FRAGMENT.frag"
+                "shader/debug/CUBE.frag"
         );
         System.out.println("SHADER_POST_DEBUG");
         SHADER_POST = new Shader(
@@ -245,9 +225,9 @@ public class Renderer {
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-        //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
         //models.addAll(VoxelLoader.load("/models/menger.vox"));
-        models.addAll(VoxelLoader.load("/models/castle.vox"));
+        //models.addAll(VoxelLoader.load("/models/castle.vox"));
     }
 
     public boolean shouldClose(){
@@ -262,6 +242,10 @@ public class Renderer {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -302,6 +286,7 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
