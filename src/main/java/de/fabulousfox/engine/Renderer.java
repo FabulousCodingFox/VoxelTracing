@@ -2,6 +2,7 @@ package de.fabulousfox.engine;
 
 import de.fabulousfox.engine.utils.Key;
 import de.fabulousfox.engine.wrapper.Shader;
+import de.fabulousfox.engine.wrapper.Texture2D;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -43,6 +44,7 @@ public class Renderer {
     private int VBO_POST;
 
     private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING;
+    private Texture2D gBufferDEPTH;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
@@ -245,6 +247,8 @@ public class Renderer {
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             throw new RuntimeException("Framebuffer not complete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        gBufferDEPTH
 
         //////////////////////////////////////////////////////////////////////////////////////
 
