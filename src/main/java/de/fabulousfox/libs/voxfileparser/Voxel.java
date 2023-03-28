@@ -3,7 +3,7 @@ package de.fabulousfox.libs.voxfileparser;
 import java.util.Objects;
 
 public final class Voxel {
-	
+
     private final GridPoint3 position;
     private final byte colourIndex;
 

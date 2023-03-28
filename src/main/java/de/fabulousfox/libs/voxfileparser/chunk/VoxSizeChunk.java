@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public final class VoxSizeChunk extends VoxChunk {
-	
+
     private final GridPoint3 size;
 
     public VoxSizeChunk(GridPoint3 size) {

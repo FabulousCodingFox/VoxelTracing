@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 public final class VoxMATTChunk extends VoxChunk {
-	
+
     private final VoxOldMaterial material;
 
     public VoxMATTChunk(VoxOldMaterial material) {
@@ -23,7 +23,7 @@ public final class VoxMATTChunk extends VoxChunk {
         int id = StreamUtils.readIntLE(stream);
         int typeIndex = StreamUtils.readIntLE(stream);
         VoxOldMaterialType matType = VoxOldMaterialType.fromIndex(typeIndex)
-            .orElseThrow(() -> new InvalidVoxException("Unknown material type " + typeIndex));
+                .orElseThrow(() -> new InvalidVoxException("Unknown material type " + typeIndex));
         float weight = StreamUtils.readFloatLE(stream);
         int propBits = StreamUtils.readIntLE(stream);
         boolean isTotalPower = VoxOldMaterialProperty.IS_TOTAL_POWER.isSet(propBits);

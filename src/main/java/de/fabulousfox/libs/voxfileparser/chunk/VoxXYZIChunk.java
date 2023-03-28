@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 
 public final class VoxXYZIChunk extends VoxChunk {
-	
+
     private final Voxel[] voxels;
 
     public VoxXYZIChunk(int voxelCount) {
@@ -30,7 +30,7 @@ public final class VoxXYZIChunk extends VoxChunk {
 
         for (int i = 0; i < voxelCount; i++) {
             var position = StreamUtils.readVector3b(stream);
-            var colorIndex = (byte) ((byte)stream.read() & 0xff);
+            var colorIndex = (byte) ((byte) stream.read() & 0xff);
             chunk.voxels[i] = new Voxel(position, colorIndex);
         }
         return chunk;

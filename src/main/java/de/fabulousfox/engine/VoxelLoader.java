@@ -31,16 +31,18 @@ public class VoxelLoader {
 
                 for (Voxel voxel : model.getVoxels()) {
                     int color;
-                    if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length){
-                        if(voxel.getColourIndex() < 0 || voxel.getColourIndex() >= VoxRGBAChunk.DEFAULT_PALETTE.length){
+                    if (voxel.getColourIndex() < 0 || voxel.getColourIndex() >= voxFile.getPalette().length) {
+                        if (voxel.getColourIndex() < 0 || voxel.getColourIndex() >= VoxRGBAChunk.DEFAULT_PALETTE.length) {
                             color = Color.WHITE.getRGB();
-                        }else{
+                        } else {
                             color = VoxRGBAChunk.DEFAULT_PALETTE[voxel.getColourIndex()];
                         }
+                    } else {
+                        color = voxFile.getPalette()[voxel.getColourIndex()];
                     }
-                    else{ color = voxFile.getPalette()[voxel.getColourIndex()]; }
 
-                    if(voxel.getPosition().x < 0 || voxel.getPosition().x >= sizeX || voxel.getPosition().y < 0 || voxel.getPosition().y >= sizeZ || voxel.getPosition().z < 0 || voxel.getPosition().z >= sizeY) continue;
+                    if (voxel.getPosition().x < 0 || voxel.getPosition().x >= sizeX || voxel.getPosition().y < 0 || voxel.getPosition().y >= sizeZ || voxel.getPosition().z < 0 || voxel.getPosition().z >= sizeY)
+                        continue;
 
                     texture.setPixel(voxel.getPosition().x, voxel.getPosition().z, voxel.getPosition().y, color);
                 }
@@ -50,9 +52,9 @@ public class VoxelLoader {
                 models.add(new Model(
                         texture,
                         new Vector3f(
-                                world_Offset.x - (int)(model.getSize().x / 2f),
-                                world_Offset.z - (int)(model.getSize().z / 2f),
-                                -world_Offset.y - (int)(model.getSize().y / 2f)
+                                world_Offset.x - (int) (model.getSize().x / 2f),
+                                world_Offset.z - (int) (model.getSize().z / 2f),
+                                -world_Offset.y - (int) (model.getSize().y / 2f)
                         ).mul(Model.VOXEL_SIZE),
                         sizeX, sizeY, sizeZ
                 ));

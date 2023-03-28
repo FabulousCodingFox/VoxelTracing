@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 
 public final class VoxMATLChunk extends VoxChunk {
-	
+
     private final VoxMaterial material;
 
     public VoxMATLChunk(VoxMaterial material) {

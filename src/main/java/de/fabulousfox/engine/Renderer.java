@@ -35,7 +35,7 @@ public class Renderer {
 
     private double lastMouseXP, lastMouseYP, mouseOffX, mouseOffY;
 
-    private final Shader SHADER_GRID, SHADER_POST;
+    private final Shader SHADER_GRID, SHADER_POST, SHADER_GRID_DEBUG_CUBE;
 
     private ArrayList<Model> models;
 
@@ -44,7 +44,7 @@ public class Renderer {
 
     private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING;
 
-    public Renderer(int windowWidth, int windowHeight, String windowTitle){
+    public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
         this.windowHeight = windowHeight;
 
@@ -110,13 +110,13 @@ public class Renderer {
         });
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
+            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
         });
 
         //////////////////////////////////////////////////////////////////////////////////////
 
         System.out.println("Initialize GLFW framebuffer...");
-        try ( MemoryStack stack = stackPush() ) {
+        try (MemoryStack stack = stackPush()) {
             IntBuffer pWidth = stack.mallocInt(1); // int*
             IntBuffer pHeight = stack.mallocInt(1); // int*
 
@@ -151,12 +151,12 @@ public class Renderer {
         glFrontFace(GL_CW);
 
         float[] quadVertices = {
-                -1.0f,  1.0f,
+                -1.0f, 1.0f,
                 -1.0f, -1.0f,
                 1.0f, -1.0f,
-                -1.0f,  1.0f,
+                -1.0f, 1.0f,
                 1.0f, -1.0f,
-                1.0f,  1.0f
+                1.0f, 1.0f
         };
         VAO_POST = glGenVertexArrays();
         VBO_POST = glGenBuffers();
@@ -169,6 +169,7 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////
 
         System.out.println("Initializing Shaders...");
+
         System.out.println("SHADER_GRID_DEBUG");
         SHADER_GRID = new Shader(
                 "shader/main/VERT.vert",
@@ -179,13 +180,18 @@ public class Renderer {
                 "shader/post/POST.vert",
                 "shader/post/POST.frag"
         );
+        System.out.println("SHADER_GRID_DEBUG_CUBE");
+        SHADER_GRID_DEBUG_CUBE = new Shader(
+                "shader/main/VERT.vert",
+                "shader/debug/CUBE.frag"
+        );
 
         //////////////////////////////////////////////////////////////////////////////////////
 
         System.out.println("Initializing Matrix...");
 
         projectionMatrix = getProjectionMatrix();
-        viewMatrix = getViewMatrix(new Vector3f(0,0,0), new Vector3f(0,0,1));
+        viewMatrix = getViewMatrix(new Vector3f(0, 0, 0), new Vector3f(0, 0, 1));
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -229,7 +235,7 @@ public class Renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gBufferLIGHTING, 0);
 
-        int[] attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+        int[] attachments = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
         glDrawBuffers(attachments);
 
         gBufferRboDepth = glGenRenderbuffers();
@@ -250,11 +256,11 @@ public class Renderer {
         //models.addAll(VoxelLoader.load("/models/castle.vox"));
     }
 
-    public boolean shouldClose(){
+    public boolean shouldClose() {
         return glfwWindowShouldClose(window);
     }
 
-    public void render(Vector3f position, Vector3f direction){
+    public void render(Vector3f position, Vector3f direction) {
         float currentFrame = (float) glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -272,25 +278,26 @@ public class Renderer {
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         viewMatrix = getViewMatrix(position, direction);
-        SHADER_GRID.use();
-        SHADER_GRID.setMatrix4f("projection", projectionMatrix);
-        SHADER_GRID.setMatrix4f("view", viewMatrix);
-        SHADER_GRID.setVector3f("position", position);
-        SHADER_GRID.setVector3f("rotation", direction.normalize());
+        Shader s = glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS ? SHADER_GRID_DEBUG_CUBE : SHADER_GRID;
+        s.use();
+        s.setMatrix4f("projection", projectionMatrix);
+        s.setMatrix4f("view", viewMatrix);
+        s.setVector3f("position", position);
+        s.setVector3f("rotation", direction.normalize());
 
-        SHADER_GRID.setFloat("zNear", ZNEAR);
-        SHADER_GRID.setInt("zFar", ZFAR);
+        s.setFloat("zNear", ZNEAR);
+        s.setInt("zFar", ZFAR);
 
         models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
 
-        for(Model model : models) {
+        for (Model model : models) {
             glActiveTexture(GL_TEXTURE10);
             glBindTexture(GL_TEXTURE_2D, gBufferRboDepth);
             SHADER_POST.setInt("gBufferDEPTH", 10);
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
-            model.prepareShader(SHADER_GRID);
+            model.prepareShader(s);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -308,11 +315,11 @@ public class Renderer {
 
         SHADER_POST.use();
         int debugDisplayMode = 0;
-        if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) debugDisplayMode = 1;
-        if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) debugDisplayMode = 2;
-        if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) debugDisplayMode = 3;
-        if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) debugDisplayMode = 4;
-        if(glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) debugDisplayMode = 5;
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) debugDisplayMode = 1;
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) debugDisplayMode = 2;
+        if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) debugDisplayMode = 3;
+        if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) debugDisplayMode = 4;
+        if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) debugDisplayMode = 5;
         SHADER_POST.setInt("debugDisplayMode", debugDisplayMode);
 
         glActiveTexture(GL_TEXTURE10);
@@ -367,45 +374,45 @@ public class Renderer {
         glfwPollEvents();
     }
 
-    public Matrix4f getViewMatrix(Vector3f position, Vector3f direction){
+    public Matrix4f getViewMatrix(Vector3f position, Vector3f direction) {
         Vector3f front = direction.normalize();
-        Vector3f right = new Vector3f(front).cross(new Vector3f(0,1,0)).normalize();
+        Vector3f right = new Vector3f(front).cross(new Vector3f(0, 1, 0)).normalize();
         Vector3f up = new Vector3f(right).cross(front).normalize();
         return new Matrix4f().lookAt(position, new Vector3f(position).add(front), up);
     }
 
     public Matrix4f getProjectionMatrix() {
-        return new Matrix4f().perspective((float) Math.toRadians(70), (float)windowWidth/(float)windowHeight, ZNEAR, ZFAR);
+        return new Matrix4f().perspective((float) Math.toRadians(70), (float) windowWidth / (float) windowHeight, ZNEAR, ZFAR);
     }
 
-    public double getMouseMoveX(){
+    public double getMouseMoveX() {
         return mouseOffX;
     }
 
-    public double getMouseMoveY(){
+    public double getMouseMoveY() {
         return mouseOffY;
     }
 
-    public float getFrameTime(){
+    public float getFrameTime() {
         return deltaTime;
     }
 
-    public double getTime(){
+    public double getTime() {
         return glfwGetTime();
     }
 
-    public boolean getIfKeyIsPressed(Key key){
-        if(key == Key.WALK_FORWARD) return glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
-        if(key == Key.WALK_BACKWARD) return glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
-        if(key == Key.WALK_LEFT) return glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
-        if(key == Key.WALK_RIGHT) return glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
-        if(key == Key.CROUCH) return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-        if(key == Key.JUMP) return glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+    public boolean getIfKeyIsPressed(Key key) {
+        if (key == Key.WALK_FORWARD) return glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+        if (key == Key.WALK_BACKWARD) return glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+        if (key == Key.WALK_LEFT) return glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+        if (key == Key.WALK_RIGHT) return glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+        if (key == Key.CROUCH) return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+        if (key == Key.JUMP) return glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
         return false;
     }
 
-    public void destroy(){
-        for(Model model : models){
+    public void destroy() {
+        for (Model model : models) {
             model.remove();
         }
         SHADER_GRID.delete();

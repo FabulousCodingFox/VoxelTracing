@@ -21,7 +21,7 @@ public class Texture3D {
         BufferUtils.zeroBuffer(image);
     }
 
-    public void setPixel(int x, int y, int z, int color){
+    public void setPixel(int x, int y, int z, int color) {
         int address = (x + y * sizeX + z * sizeX * sizeY) * 4;
 
         image.put(address, (byte) ((color >> 16) & 0xFF)); // Red component
@@ -30,7 +30,7 @@ public class Texture3D {
         image.put(address + 3, (byte) ((color >> 24) & 0xFF)); // Alpha component
     }
 
-    public void create(){
+    public void create() {
         glActiveTexture(GL_TEXTURE5);
         texture = glGenTextures();
         glBindTexture(GL_TEXTURE_3D, texture);

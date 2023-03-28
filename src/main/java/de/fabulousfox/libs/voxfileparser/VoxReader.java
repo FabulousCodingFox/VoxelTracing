@@ -9,10 +9,10 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 public class VoxReader implements Closeable {
-	public static final int VERSION = 150;
+    public static final int VERSION = 150;
 
-    protected static final byte[] MAGIC_BYTES = new byte[] {
-        (byte)'V', (byte)'O', (byte)'X', (byte)' '
+    protected static final byte[] MAGIC_BYTES = new byte[]{
+            (byte) 'V', (byte) 'O', (byte) 'X', (byte) ' '
     };
 
     private final InputStream stream;
@@ -39,12 +39,12 @@ public class VoxReader implements Closeable {
 
         if (fileVersion < VERSION) {
             throw new InvalidVoxException(
-                String.format("Vox versions older than %d are not supported", VERSION)
+                    String.format("Vox versions older than %d are not supported", VERSION)
             );
         }
 
         VoxChunk chunk = VoxChunk.readChunk(stream);
-        
+
         if (chunk == null) {
             throw new InvalidVoxException("No root chunk present in the file");
         }
@@ -53,7 +53,7 @@ public class VoxReader implements Closeable {
             throw new InvalidVoxException("First chunk is not of ID \"MAIN\"");
         }
 
-        return new VoxFile(fileVersion, (VoxRootChunk)chunk);
+        return new VoxFile(fileVersion, (VoxRootChunk) chunk);
     }
 
     @Override

@@ -10,9 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 
 public final class VoxGroupChunk extends VoxChunk {
-	
-	public final int id;
-	public List<Integer> child_ids = new ArrayList<Integer>();
+
+    public final int id;
+    public List<Integer> child_ids = new ArrayList<Integer>();
 
     public VoxGroupChunk(int id) {
         super(ChunkFactory.nGRP);
@@ -28,7 +28,7 @@ public final class VoxGroupChunk extends VoxChunk {
         }*/
         int num_children = StreamUtils.readIntLE(stream);
 
-        for (int i=0 ; i<num_children ; i++) {
+        for (int i = 0; i < num_children; i++) {
             int child_id = StreamUtils.readIntLE(stream);
             chunk.child_ids.add(child_id);
         }

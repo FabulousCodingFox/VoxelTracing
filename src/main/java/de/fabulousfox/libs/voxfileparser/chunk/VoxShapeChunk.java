@@ -10,9 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 
 public final class VoxShapeChunk extends VoxChunk {
-	
-	public final int id;
-	public List<Integer> model_ids = new ArrayList<Integer>();
+
+    public final int id;
+    public List<Integer> model_ids = new ArrayList<Integer>();
 
     public VoxShapeChunk(int id) {
         super(ChunkFactory.nSHP);
@@ -30,7 +30,7 @@ public final class VoxShapeChunk extends VoxChunk {
 
         int num_models = StreamUtils.readIntLE(stream);
 
-        for (int i=0 ; i<num_models ; i++) {
+        for (int i = 0; i < num_models; i++) {
             int model_id = StreamUtils.readIntLE(stream);
             HashMap<String, String> model_dict = StreamUtils.readDictionary(stream);
             /*if (model_dict.size() > 0) {
@@ -40,7 +40,7 @@ public final class VoxShapeChunk extends VoxChunk {
             chunk.model_ids.add(model_id);
         }
         return chunk;
-	}
+    }
 
     @Override
     protected void writeContent(OutputStream stream) throws IOException {

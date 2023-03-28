@@ -38,47 +38,47 @@ public class Model {
         final float dimZ = sizeZ * VOXEL_SIZE;
 
         float[] vertices = {
-                0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
-                dimX, 0.0f, 0.0f,  1.0f, 0.0f, 1f,
-                dimX, dimY, 0.0f,  1.0f, 1.0f, 1f,
-                dimX, dimY, 0.0f,  1.0f, 1.0f, 1f,
-                0.0f, dimY, 0.0f,  0.0f, 1.0f, 1f,
-                0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1f,
+                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
+                dimX, 0.0f, 0.0f, 1.0f, 0.0f, 1f,
+                dimX, dimY, 0.0f, 1.0f, 1.0f, 1f,
+                dimX, dimY, 0.0f, 1.0f, 1.0f, 1f,
+                0.0f, dimY, 0.0f, 0.0f, 1.0f, 1f,
+                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
 
-                0.0f, 0.0f, dimZ,  0.0f, 0.0f, 0f,
-                dimX, dimY, dimZ,  1.0f, 1.0f, 0f,
-                dimX, 0.0f, dimZ,  1.0f, 0.0f, 0f,
-                dimX, dimY, dimZ,  1.0f, 1.0f, 0f,
-                0.0f, 0.0f, dimZ,  0.0f, 0.0f, 0f,
-                0.0f, dimY, dimZ,  0.0f, 1.0f, 0f,
+                0.0f, 0.0f, dimZ, 0.0f, 0.0f, 0f,
+                dimX, dimY, dimZ, 1.0f, 1.0f, 0f,
+                dimX, 0.0f, dimZ, 1.0f, 0.0f, 0f,
+                dimX, dimY, dimZ, 1.0f, 1.0f, 0f,
+                0.0f, 0.0f, dimZ, 0.0f, 0.0f, 0f,
+                0.0f, dimY, dimZ, 0.0f, 1.0f, 0f,
 
-                0.0f, 0.0f, dimZ,  1.0f, 1.0f, 3f,
-                0.0f, dimY, 0.0f,  0.0f, 0.0f, 3f,
-                0.0f, dimY, dimZ,  1.0f, 0.0f, 3f,
-                0.0f, dimY, 0.0f,  0.0f, 0.0f, 3f,
-                0.0f, 0.0f, dimZ,  1.0f, 1.0f, 3f,
-                0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 3f,
+                0.0f, 0.0f, dimZ, 1.0f, 1.0f, 3f,
+                0.0f, dimY, 0.0f, 0.0f, 0.0f, 3f,
+                0.0f, dimY, dimZ, 1.0f, 0.0f, 3f,
+                0.0f, dimY, 0.0f, 0.0f, 0.0f, 3f,
+                0.0f, 0.0f, dimZ, 1.0f, 1.0f, 3f,
+                0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 3f,
 
-                dimX, dimY, dimZ,  0.0f, 0.0f, 2f,
-                dimX, dimY, 0.0f,  1.0f, 0.0f, 2f,
-                dimX, 0.0f, 0.0f,  1.0f, 1.0f, 2f,
-                dimX, 0.0f, 0.0f,  1.0f, 1.0f, 2f,
-                dimX, 0.0f, dimZ,  0.0f, 1.0f, 2f,
-                dimX, dimY, dimZ,  0.0f, 0.0f, 2f,
+                dimX, dimY, dimZ, 0.0f, 0.0f, 2f,
+                dimX, dimY, 0.0f, 1.0f, 0.0f, 2f,
+                dimX, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
+                dimX, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
+                dimX, 0.0f, dimZ, 0.0f, 1.0f, 2f,
+                dimX, dimY, dimZ, 0.0f, 0.0f, 2f,
 
-                0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 5f,
-                dimX, 0.0f, dimZ,  1.0f, 0.0f, 5f,
-                dimX, 0.0f, 0.0f,  1.0f, 1.0f, 5f,
-                dimX, 0.0f, dimZ,  1.0f, 0.0f, 5f,
-                0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 5f,
-                0.0f, 0.0f, dimZ,  0.0f, 0.0f, 5f,
+                0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
+                dimX, 0.0f, dimZ, 1.0f, 0.0f, 5f,
+                dimX, 0.0f, 0.0f, 1.0f, 1.0f, 5f,
+                dimX, 0.0f, dimZ, 1.0f, 0.0f, 5f,
+                0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
+                0.0f, 0.0f, dimZ, 0.0f, 0.0f, 5f,
 
-                0.0f, dimY, 0.0f,  0.0f, 1.0f, 4f,
-                dimX, dimY, 0.0f,  1.0f, 1.0f, 4f,
-                dimX, dimY, dimZ,  1.0f, 0.0f, 4f,
-                dimX, dimY, dimZ,  1.0f, 0.0f, 4f,
-                0.0f, dimY, dimZ,  0.0f, 0.0f, 4f,
-                0.0f, dimY, 0.0f,  0.0f, 1.0f, 4f
+                0.0f, dimY, 0.0f, 0.0f, 1.0f, 4f,
+                dimX, dimY, 0.0f, 1.0f, 1.0f, 4f,
+                dimX, dimY, dimZ, 1.0f, 0.0f, 4f,
+                dimX, dimY, dimZ, 1.0f, 0.0f, 4f,
+                0.0f, dimY, dimZ, 0.0f, 0.0f, 4f,
+                0.0f, dimY, 0.0f, 0.0f, 1.0f, 4f
         };
 
         vao = glGenVertexArrays();
@@ -87,9 +87,9 @@ public class Model {
         vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3+3)*4, 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3 + 3) * 4, 0);
         glEnableVertexAttribArray(0); // Position
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, (3+3)*4, 4*(3));
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, (3 + 3) * 4, 4 * (3));
         glEnableVertexAttribArray(1); // UV
 
         glBindVertexArray(0);

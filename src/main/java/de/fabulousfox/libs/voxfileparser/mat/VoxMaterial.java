@@ -33,24 +33,24 @@ public final class VoxMaterial {
 
     public Optional<Integer> getInt(String property) {
         return Optional.ofNullable(properties.getOrDefault(property, null))
-            .flatMap(x -> {
-                try {
-                    return Optional.of(Integer.parseInt(x));
-                } catch (NumberFormatException e) {
-                    return Optional.empty();
-                }
-            });
+                .flatMap(x -> {
+                    try {
+                        return Optional.of(Integer.parseInt(x));
+                    } catch (NumberFormatException e) {
+                        return Optional.empty();
+                    }
+                });
     }
 
     public Optional<Float> getFloat(String property) {
         return Optional.ofNullable(properties.getOrDefault(property, null))
-            .flatMap(x -> {
-                try {
-                    return Optional.of(Float.parseFloat(x));
-                } catch (NumberFormatException e) {
-                    return Optional.empty();
-                }
-            });
+                .flatMap(x -> {
+                    try {
+                        return Optional.of(Float.parseFloat(x));
+                    } catch (NumberFormatException e) {
+                        return Optional.empty();
+                    }
+                });
     }
 
     public boolean hasProperty(String property) {

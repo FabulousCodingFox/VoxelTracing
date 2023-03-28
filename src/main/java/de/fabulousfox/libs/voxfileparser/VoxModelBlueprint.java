@@ -4,12 +4,12 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public final class VoxModelBlueprint {
-	
-	public final int id;
+
+    public final int id;
     private final GridPoint3 size;
     private final Voxel[] voxels;
 
-    public VoxModelBlueprint(int _id, GridPoint3 _size, Voxel[] _voxels) { 
+    public VoxModelBlueprint(int _id, GridPoint3 _size, Voxel[] _voxels) {
         if (_size == null || _voxels == null) {
             throw new IllegalArgumentException("Both size and voxels must be non-null");
         }

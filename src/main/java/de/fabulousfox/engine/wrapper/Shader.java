@@ -11,10 +11,11 @@ import static org.lwjgl.opengl.GL46.*;
 
 public class Shader {
     int ID;
+
     /*
-        * Creates a shader program from the given vertex and fragment shader source code.
-        * @param vertexPath The path to the vertex shader source code.
-        * @param fragmentPath The path to the fragment shader source code.
+     * Creates a shader program from the given vertex and fragment shader source code.
+     * @param vertexPath The path to the vertex shader source code.
+     * @param fragmentPath The path to the fragment shader source code.
      */
     public Shader(String vertexPath, String fragmentPath) {
         // 1. retrieve the vertex/fragment source code from filePath
@@ -23,7 +24,7 @@ public class Shader {
         try {
             vertexCode = FileUtils.readResourceFile(vertexPath);
             fragmentCode = FileUtils.readResourceFile(fragmentPath);
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -31,21 +32,21 @@ public class Shader {
         int vertexShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShader, vertexCode);
         glCompileShader(vertexShader);
-        if(glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE){
+        if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
             System.out.println(
                     glGetShaderInfoLog(vertexShader, glGetShaderi(vertexShader, GL_INFO_LOG_LENGTH))
             );
-            throw new RuntimeException("Vertex shader failed to compile: "+vertexPath);
+            throw new RuntimeException("Vertex shader failed to compile: " + vertexPath);
         }
 
         int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShader, fragmentCode);
         glCompileShader(fragmentShader);
-        if(glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE){
+        if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
             System.out.println(
                     glGetShaderInfoLog(fragmentShader, glGetShaderi(fragmentShader, GL_INFO_LOG_LENGTH))
             );
-            throw new RuntimeException("Fragment shader failed to compile: "+fragmentPath);
+            throw new RuntimeException("Fragment shader failed to compile: " + fragmentPath);
         }
 
         // 3. create shader program
@@ -53,11 +54,11 @@ public class Shader {
         glAttachShader(ID, vertexShader);
         glAttachShader(ID, fragmentShader);
         glLinkProgram(ID);
-        if(glGetProgrami(ID, GL_LINK_STATUS) == GL_FALSE){
+        if (glGetProgrami(ID, GL_LINK_STATUS) == GL_FALSE) {
             System.out.println(
                     glGetProgramInfoLog(ID, glGetProgrami(ID, GL_INFO_LOG_LENGTH))
             );
-            throw new RuntimeException("Shader program failed to link: "+vertexPath+" and "+fragmentPath);
+            throw new RuntimeException("Shader program failed to link: " + vertexPath + " and " + fragmentPath);
         }
 
         // 4. clean up
@@ -66,73 +67,74 @@ public class Shader {
     }
 
     /*
-        * Uses the shader program.
+     * Uses the shader program.
      */
     public void use() {
         glUseProgram(ID);
     }
 
     /*
-        * Sets the value of a uniform variable in the shader program.
-        * @param name The name of the uniform variable.
-        * @param value The value of the uniform variable.
+     * Sets the value of a uniform variable in the shader program.
+     * @param name The name of the uniform variable.
+     * @param value The value of the uniform variable.
      */
     public void setInt(String name, int value) {
         glUniform1i(glGetUniformLocation(ID, name), value);
     }
 
     /*
-        * Sets the value of a uniform variable in the shader program.
-        * @param name The name of the uniform variable.
-        * @param value The value of the uniform variable.
+     * Sets the value of a uniform variable in the shader program.
+     * @param name The name of the uniform variable.
+     * @param value The value of the uniform variable.
      */
     public void setFloat(String name, float value) {
         glUniform1f(glGetUniformLocation(ID, name), value);
     }
 
     /*
-        * Sets the value of a uniform variable in the shader program.
-        * @param name The name of the uniform variable.
-        * @param value The value of the uniform variable.
+     * Sets the value of a uniform variable in the shader program.
+     * @param name The name of the uniform variable.
+     * @param value The value of the uniform variable.
      */
     public void setBool(String name, boolean value) {
         glUniform1i(glGetUniformLocation(ID, name), value ? 1 : 0);
     }
 
     /*
-        * Sets the value of a uniform variable in the shader program.
-        * @param name The name of the uniform variable.
-        * @param value The value of the uniform variable.
+     * Sets the value of a uniform variable in the shader program.
+     * @param name The name of the uniform variable.
+     * @param value The value of the uniform variable.
      */
     public void setMatrix4f(String name, Matrix4f value) {
         glUniformMatrix4fv(glGetUniformLocation(ID, name), false, value.get(new float[16]));
     }
 
     /*
-        * Sets the value of a uniform variable in the shader program.
-        * @param name The name of the uniform variable.
-        * @param value The value of the uniform variable.
+     * Sets the value of a uniform variable in the shader program.
+     * @param name The name of the uniform variable.
+     * @param value The value of the uniform variable.
      */
     public void setVector2f(String name, Vector2f value) {
-        glUniform2fv(glGetUniformLocation(ID, name),new float[]{value.x, value.y} );
+        glUniform2fv(glGetUniformLocation(ID, name), new float[]{value.x, value.y});
     }
+
     public void setVector3f(String name, Vector3f value) {
-        glUniform3fv(glGetUniformLocation(ID, name),new float[]{value.x, value.y, value.z} );
+        glUniform3fv(glGetUniformLocation(ID, name), new float[]{value.x, value.y, value.z});
     }
 
     public void setVector3fArray(String name, Vector3f[] value) {
-        float[] data = new float[value.length*3];
-        for(int i = 0; i < value.length; i++) {
-            data[i*3] = value[i].x;
-            data[i*3+1] = value[i].y;
-            data[i*3+2] = value[i].z;
+        float[] data = new float[value.length * 3];
+        for (int i = 0; i < value.length; i++) {
+            data[i * 3] = value[i].x;
+            data[i * 3 + 1] = value[i].y;
+            data[i * 3 + 2] = value[i].z;
         }
         glUniform3fv(glGetUniformLocation(ID, name), data);
     }
 
     /*
-        * Delete the shader program.
-    */
+     * Delete the shader program.
+     */
     public void delete() {
         glDeleteProgram(ID);
     }

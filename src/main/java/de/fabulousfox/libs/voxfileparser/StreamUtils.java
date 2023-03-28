@@ -11,7 +11,7 @@ import java.util.Map;
 
 public final class StreamUtils {
 
-	public static int readIntLE(InputStream stream) throws IOException {
+    public static int readIntLE(InputStream stream) throws IOException {
         byte[] bytes = new byte[4];
         if (stream.read(bytes) != 4) {
             throw new IOException("Not enough bytes to read an int");
@@ -20,7 +20,7 @@ public final class StreamUtils {
         return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
 
-	public static float readFloatLE(InputStream stream) throws IOException {
+    public static float readFloatLE(InputStream stream) throws IOException {
         byte[] bytes = new byte[4];
         if (stream.read(bytes) != 4) {
             throw new IOException("Not enough bytes to read a float");
@@ -29,11 +29,11 @@ public final class StreamUtils {
         return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
     }
 
-	public static GridPoint3 readVector3i(InputStream stream) throws IOException {
+    public static GridPoint3 readVector3i(InputStream stream) throws IOException {
         return new GridPoint3(readIntLE(stream), readIntLE(stream), readIntLE(stream));
     }
 
-	public static GridPoint3 readVector3b(InputStream stream) throws IOException {
+    public static GridPoint3 readVector3b(InputStream stream) throws IOException {
         int x = stream.read();
         int y = stream.read();
         int z = stream.read();
@@ -42,10 +42,10 @@ public final class StreamUtils {
             throw new IOException("Not enough bytes to read a vector3b");
         }
 
-        return new GridPoint3((byte)x, (byte)y, (byte)z);
+        return new GridPoint3((byte) x, (byte) y, (byte) z);
     }
 
-	public static String readString(InputStream stream) throws IOException {
+    public static String readString(InputStream stream) throws IOException {
         int n = readIntLE(stream);
         if (n < 0) {
             throw new IOException("String is too large to read");
@@ -59,7 +59,7 @@ public final class StreamUtils {
         return new String(bytes);
     }
 
-	public static HashMap<String, String> readDictionary(InputStream stream) throws IOException {
+    public static HashMap<String, String> readDictionary(InputStream stream) throws IOException {
         int n = readIntLE(stream);
         if (n < 0) {
             throw new InvalidVoxException("Dictionary too large");
@@ -81,10 +81,10 @@ public final class StreamUtils {
 
     public static void writeIntLE(int v, OutputStream stream) throws IOException {
         stream.write(
-            ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(v).array()
+                ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(v).array()
         );
     }
-    
+
     public static void writeVector3i(GridPoint3 v, OutputStream stream) throws IOException {
         writeIntLE(v.x, stream);
         writeIntLE(v.y, stream);
@@ -92,9 +92,9 @@ public final class StreamUtils {
     }
 
     public static void writeVector3b(GridPoint3 v, OutputStream stream) throws IOException {
-        stream.write((byte)v.x);
-        stream.write((byte)v.y);
-        stream.write((byte)v.z);
+        stream.write((byte) v.x);
+        stream.write((byte) v.y);
+        stream.write((byte) v.z);
     }
 
     public static void writeString(String s, OutputStream stream) throws IOException {
