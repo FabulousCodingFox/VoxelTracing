@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
@@ -11,7 +11,7 @@ in vec3 fragPos;
 
 uniform sampler3D dataContainer;
 
-uniform sampler2D gBufferDEPTH;
+layout( r32i ) uniform iimage2D gBufferDEPTH;
 
 uniform int sizeX;
 uniform int sizeY;

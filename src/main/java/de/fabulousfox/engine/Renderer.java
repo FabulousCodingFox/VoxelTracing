@@ -248,7 +248,7 @@ public class Renderer {
             throw new RuntimeException("Framebuffer not complete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        gBufferDEPTH
+        gBufferDEPTH = new Texture2D(windowWidth, windowHeight);
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -296,7 +296,7 @@ public class Renderer {
 
         for (Model model : models) {
             glActiveTexture(GL_TEXTURE10);
-            glBindTexture(GL_TEXTURE_2D, gBufferRboDepth);
+            glBindTexture(GL_TEXTURE_2D, gBufferDEPTH.get());
             SHADER_POST.setInt("gBufferDEPTH", 10);
 
             glActiveTexture(GL_TEXTURE5);
@@ -347,7 +347,7 @@ public class Renderer {
         SHADER_POST.setInt("gBufferLIGHTING", 14);
 
         glActiveTexture(GL_TEXTURE15);
-        glBindTexture(GL_TEXTURE_2D, gBufferRboDepth);
+        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH.get());
         SHADER_POST.setInt("gBufferDEPTH", 15);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
