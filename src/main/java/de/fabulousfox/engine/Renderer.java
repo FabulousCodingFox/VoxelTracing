@@ -35,7 +35,7 @@ public class Renderer {
 
     private double lastMouseXP, lastMouseYP, mouseOffX, mouseOffY;
 
-    private final Shader SHADER_GRID, SHADER_POST;
+    private final Shader SHADER_GRID, SHADER_POST, SHADER_GRID_DEBUG_BOUNDING_BOX;
 
     private ArrayList<Model> models;
 
@@ -152,6 +152,10 @@ public class Renderer {
         System.out.println("SHADER_GRID_DEBUG");
         SHADER_GRID = new Shader(
                 "shader/main/VERT.vert",
+                "shader/main/FRAGMENT.frag"
+        );
+        SHADER_GRID_DEBUG_BOUNDING_BOX = new Shader(
+                "shader/main/VERT.vert",
                 "shader/debug/CUBE.frag"
         );
         System.out.println("SHADER_POST_DEBUG");
@@ -256,14 +260,15 @@ public class Renderer {
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         viewMatrix = getViewMatrix(position, direction);
-        SHADER_GRID.use();
-        SHADER_GRID.setMatrix4f("projection", projectionMatrix);
-        SHADER_GRID.setMatrix4f("view", viewMatrix);
-        SHADER_GRID.setVector3f("position", position);
-        SHADER_GRID.setVector3f("rotation", direction.normalize());
+        Shader s = glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS ? SHADER_GRID_DEBUG_BOUNDING_BOX : SHADER_GRID;
+        s.use();
+        s.setMatrix4f("projection", projectionMatrix);
+        s.setMatrix4f("view", viewMatrix);
+        s.setVector3f("position", position);
+        s.setVector3f("rotation", direction.normalize());
 
-        SHADER_GRID.setFloat("zNear", ZNEAR);
-        SHADER_GRID.setInt("zFar", ZFAR);
+        s.setFloat("zNear", ZNEAR);
+        s.setInt("zFar", ZFAR);
 
         models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
 
@@ -274,7 +279,7 @@ public class Renderer {
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
-            model.prepareShader(SHADER_GRID);
+            model.prepareShader(s);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
