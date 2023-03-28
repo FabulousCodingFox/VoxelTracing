@@ -6,6 +6,7 @@ import de.fabulousfox.libs.voxfileparser.chunk.VoxRGBAChunk;
 import org.joml.Vector3f;
 
 import java.awt.*;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -15,7 +16,7 @@ public class VoxelLoader {
     public static ArrayList<Model> load(String path) {
         ArrayList<Model> models = new ArrayList<>();
 
-        try (VoxReader reader = new VoxReader(VoxelLoader.class.getResourceAsStream(path))) {
+        try (VoxReader reader = new VoxReader(new FileInputStream("C:/Users/fabif/IdeaProjects/VoxelTracing/src/main/resources"+ path))) {
             VoxFile voxFile = reader.read();
 
             for (VoxModelInstance model_instance : voxFile.getModelInstances()) {
