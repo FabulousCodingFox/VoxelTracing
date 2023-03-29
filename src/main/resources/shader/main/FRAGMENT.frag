@@ -5,15 +5,17 @@ layout (location = 1) out vec3 gBufferNORMAL;
 layout (location = 2) out vec4 gBufferMATERIAL;
 layout (location = 3) out vec4 gBufferPosition;
 layout (location = 4) out vec3 gBufferLIGHTING;
-
-layout (depth_greater) out float gl_FragDepth;
+layout (location = 5) out float gBufferDEPTH_WRITE;
 
 in vec3 uvData;
 in vec3 fragPos;
 
 uniform sampler3D dataContainer;
 
-layout( r32ui ) uniform uimage2D gBufferDEPTH;
+uniform sampler2D gBufferDEPTH_READ;
+
+uniform int windowWidth;
+uniform int windowHeight;
 
 uniform int sizeX;
 uniform int sizeY;
@@ -26,8 +28,7 @@ uniform vec3 position;
 uniform vec3 direction;
 
 uniform float zNear;
-//uniform float zFar;
-const int zFar = 2147483647;
+const int zFar = 2000;
 
 const int accuracy = 3;
 const int raycastExpandHitbox = 3;
@@ -39,13 +40,6 @@ struct DDAResult{
     vec3 position;
     float ao;
 };
-
-
-void storeFloatImageDEPTH(vec2 texCoord, float value) {
-    ivec2 texelCoord = ivec2(texCoord * imageSize(gBufferDEPTH));
-    int intValue = floatBitsToInt(value);
-    imageAtomicExchange(gBufferDEPTH, texelCoord, intValue);
-}
 
 bool isNear(float a, float b){
     return abs(a-b) < .01;
@@ -76,6 +70,10 @@ vec4 calcVoxelAo(vec3 pos, vec3 d1, vec3 d2) {
     ao.z = calcVertexAo(side.zw, corner.z);
     ao.w = calcVertexAo(side.wx, corner.w);
     return 1.0 - ao;
+}
+
+float calculateHyperbolicDepth(float distance, float zn, int zf){
+    return ((1. / distance) - (1. / zn)) / ((1. / float(zf)) - (1. / zn));
 }
 
 DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
@@ -117,7 +115,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
 }
 
 void main(){
-    //if(gl_FragCoord.z > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
+    //if(gl_FragCoord.z > texelFetch(gBufferDEPTH_READ, ivec2(gl_FragCoord.xy), 0).r) discard;
 
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
     bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
@@ -193,12 +191,16 @@ void main(){
 
     //gBufferALBEDO = vec4(vec3(texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r), 1.);
 
-    float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+    //float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+    float hyperbolicDepth = calculateHyperbolicDepth(c.distance, zNear, zFar);
+    // float linearDepth = c.distance / 10.;
     //if(hyperbolicDepth > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
     gBufferPosition = vec4(c.position, hyperbolicDepth);
+    //gBufferDEPTH_WRITE = linearDepth;
+    gBufferDEPTH_WRITE = hyperbolicDepth;
     gl_FragDepth = hyperbolicDepth;
 
-    storeFloatImageDEPTH(gl_FragCoord.xy, .9);//hyperbolicDepth);
+    //storeFloatImageDEPTH(gl_FragCoord.xy, .9);//hyperbolicDepth);
 
     //imageStore(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
     //storeFloatImage(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);

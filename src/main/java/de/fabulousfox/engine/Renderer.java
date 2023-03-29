@@ -2,7 +2,6 @@ package de.fabulousfox.engine;
 
 import de.fabulousfox.engine.utils.Key;
 import de.fabulousfox.engine.wrapper.Shader;
-import de.fabulousfox.engine.wrapper.Image2D;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -10,7 +9,6 @@ import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL46;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
@@ -24,7 +22,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memUTF8;
 
 public class Renderer {
-    private final int ZFAR = 2147483647;
+    private final int ZFAR = 2000;//2147483647;
     private final float ZNEAR = 0.1f;
 
     private final long window;
@@ -45,8 +43,8 @@ public class Renderer {
     private int VAO_POST;
     private int VBO_POST;
 
-    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING;
-    private Image2D gBufferDEPTH;
+    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING, gBufferDEPTH_WRITE;
+    private int gBufferDEPTH_READ;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
@@ -293,7 +291,14 @@ public class Renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gBufferLIGHTING, 0);
 
-        int[] attachments = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
+        gBufferDEPTH_WRITE = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_WRITE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, gBufferDEPTH_WRITE, 0);
+
+        int[] attachments = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5};
         glDrawBuffers(attachments);
 
         gBufferRboDepth = glGenRenderbuffers();
@@ -304,8 +309,11 @@ public class Renderer {
             throw new RuntimeException("Framebuffer not complete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        gBufferDEPTH = new Image2D(windowWidth, windowHeight);
-        gBufferDEPTH.create();
+        gBufferDEPTH_READ = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_READ);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -350,17 +358,26 @@ public class Renderer {
         s.setFloat("zNear", ZNEAR);
         s.setInt("zFar", ZFAR);
 
+        s.setInt("windowWidth", windowWidth);
+        s.setInt("windowHeight", windowHeight);
+
         models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
 
         for (Model model : models) {
-            gBufferDEPTH.bind(10);
-            SHADER_POST.setInt("gBufferDEPTH", 10);
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_READ);
+            s.setInt("gBufferDEPTH_READ", 10);
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
+            s.setInt("voxelTexture", 5);
+
             model.prepareShader(s);
             glBindVertexArray(model.getVAO());
             glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            // Copy texture gBufferDepth_write to gBufferDepth_read
+            glCopyImageSubData(gBufferDEPTH_WRITE, GL_TEXTURE_2D, 0, 0, 0, 0, gBufferDEPTH_READ, GL_TEXTURE_2D, 0, 0, 0, 0, windowWidth, windowHeight, 1);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -381,6 +398,10 @@ public class Renderer {
         if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) debugDisplayMode = 3;
         if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) debugDisplayMode = 4;
         if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) debugDisplayMode = 5;
+        if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) debugDisplayMode = 6;
+        if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) debugDisplayMode = 7;
+        if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) debugDisplayMode = 8;
+        if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) debugDisplayMode = 9;
         SHADER_POST.setInt("debugDisplayMode", debugDisplayMode);
 
         glActiveTexture(GL_TEXTURE10);
@@ -404,7 +425,7 @@ public class Renderer {
         SHADER_POST.setInt("gBufferLIGHTING", 14);
 
         glActiveTexture(GL_TEXTURE15);
-        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH.get());
+        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_READ);
         SHADER_POST.setInt("gBufferDEPTH", 15);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
@@ -485,7 +506,8 @@ public class Renderer {
         glDeleteTextures(gBufferNORMAL);
         glDeleteTextures(gBufferMATERIAL);
 
-        gBufferDEPTH.remove();
+        glDeleteTextures(gBufferDEPTH_READ);
+        glDeleteTextures(gBufferDEPTH_WRITE);
 
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);
