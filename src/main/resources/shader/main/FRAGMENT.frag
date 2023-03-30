@@ -2,20 +2,16 @@
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
-layout (location = 2) out vec4 gBufferMATERIAL;
-layout (location = 3) out vec4 gBufferPosition;
-layout (location = 4) out vec3 gBufferLIGHTING;
-layout (location = 5) out float gBufferDEPTH_WRITE;
+layout (location = 2) out vec3 gBufferLIGHTING;
 
 in vec3 uvData;
 in vec3 fragPos;
 
+layout (depth_less) out float gl_FragDepth;
+
 uniform sampler3D dataContainer;
 
-uniform sampler2D gBufferDEPTH_READ;
-
-uniform int windowWidth;
-uniform int windowHeight;
+uniform vec2 iResolution;
 
 uniform int sizeX;
 uniform int sizeY;
@@ -29,9 +25,10 @@ uniform vec3 direction;
 
 uniform float zNear;
 const int zFar = 2000;
+const float PI = 3.1415926535897932384626433832795;
 
 const int accuracy = 3;
-const int raycastExpandHitbox = 3;
+const int raycastExpandHitbox = 2000; //TODO: Remove this
 
 struct DDAResult{
     vec4 color;
@@ -117,8 +114,54 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
 void main(){
     //if(gl_FragCoord.z > texelFetch(gBufferDEPTH_READ, ivec2(gl_FragCoord.xy), 0).r) discard;
 
-    vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
-    bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
+    // Box verts
+    // 0, 0, 0: 0, 0, 0
+    // 1, 0, 0: sizeX, 0, 0
+    // 0, 1, 0: 0, sizeY, 0
+    // 1, 1, 0: sizeX, sizeY, 0
+    // 0, 0, 1: 0, 0, sizeZ
+    // 1, 0, 1: sizeX, 0, sizeZ
+    // 0, 1, 1: 0, sizeY, sizeZ
+    // 1, 1, 1: sizeX, sizeY, sizeZ
+
+    //vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    //vec3 totalOffset = (((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ)) - playerOffset;
+
+    vec3 rayDir = normalize(position - fragPos);
+    vec3 fragmentOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+
+    // Get which face of the cube the ray with origin fragmentOffset and the direction rayDir is pointing at
+    bvec3 face;
+    if(abs(rayDir.x) > abs(rayDir.y) && abs(rayDir.x) > abs(rayDir.z)){
+        face = bvec3(rayDir.x > 0, false, false);
+    }else if(abs(rayDir.y) > abs(rayDir.x) && abs(rayDir.y) > abs(rayDir.z)){
+        face = bvec3(false, rayDir.y > 0, false);
+    } else{
+        face = bvec3(false, false, rayDir.z > 0);
+    }
+
+    // Get which face of the cube the ray with origin fragPos and the direction rayDir is pointing at
+
+
+    gBufferALBEDO = vec4(face, 1);
+    gBufferNORMAL = vec3(face);
+    gBufferLIGHTING = vec3(1);
+
+
+    // Get bvec3 face from ray direction
+
+    // Yaw -90 to 90
+    // Pitch 0 to 360
+
+
+
+    /*// Get voxel
+    DDAResult dda = raycastDDA(position, rayDir, mask);
+    gBufferALBEDO = dda.color;
+    gBufferNORMAL = vec3(dda.normal);
+    gBufferLIGHTING = vec3(dda.ao);*/
+
+    /*bool playerOutsideOfBox = false;//playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
     if(playerOutsideOfBox != gl_FrontFacing) discard;
 
     vec2 uv = uvData.xy;
@@ -172,10 +215,12 @@ void main(){
             start = vec3(pixelX, 0., pixelZ);
             mask = bvec3(false, true, false);
         }
-    }else{
-        start = playerOffset;
-        start.z = sizeZ - start.z;
     }
+
+
+
+    start = playerOffset;
+    start.z = sizeZ - start.z;
 
     DDAResult c = raycastDDA(start, dir, mask);
     if(c.color.a < .5) discard;
@@ -184,25 +229,26 @@ void main(){
     gBufferNORMAL = vec3(c.normal);
     gBufferLIGHTING = vec3(c.ao);
 
-    gBufferMATERIAL = vec4(0., 0., 1., 0.);
-    if(isNear(gBufferALBEDO.y, .0)){
-        gBufferMATERIAL.x = 1.;
-    }
+    //gBufferMATERIAL = vec4(0., 0., 1., 0.);
+    //if(isNear(gBufferALBEDO.y, .0)){
+    //    gBufferMATERIAL.x = 1.;
+    //}
 
     //gBufferALBEDO = vec4(vec3(texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r), 1.);
 
-    //float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
-    float hyperbolicDepth = calculateHyperbolicDepth(c.distance, zNear, zFar);
+    float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+    //float hyperbolicDepth = calculateHyperbolicDepth(c.distance, zNear, zFar);
     // float linearDepth = c.distance / 10.;
     //if(hyperbolicDepth > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
-    gBufferPosition = vec4(c.position, hyperbolicDepth);
+    //gBufferPosition = vec4(c.position, hyperbolicDepth);
     //gBufferDEPTH_WRITE = linearDepth;
-    gBufferDEPTH_WRITE = hyperbolicDepth;
+    //gBufferDEPTH_WRITE = hyperbolicDepth;
     gl_FragDepth = hyperbolicDepth;
 
     //storeFloatImageDEPTH(gl_FragCoord.xy, .9);//hyperbolicDepth);
 
     //imageStore(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
     //storeFloatImage(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
-    //imageAtomicExchange(gBufferDEPTH, ivec2(gl_FragCoord.xy), uint(intFromDecimalPlaces(hyperbolicDepth)));
+    //imageAtomicExchange(gBufferDEPTH, ivec2(gl_FragCoord.xy), uint(intFromDecimalPlaces(hyperbolicDepth)));*/
+
 }

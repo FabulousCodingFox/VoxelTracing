@@ -130,4 +130,24 @@ public class Model {
     public Vector3f getSize() {
         return new Vector3f(sizeX, sizeY, sizeZ);
     }
+
+    public double getDistance(Vector3f cam) {
+        float sX = sizeX * VOXEL_SIZE;
+        float sY = sizeY * VOXEL_SIZE;
+        float sZ = sizeZ * VOXEL_SIZE;
+
+        Vector3f nearestPointOnBoxToCam = new Vector3f(
+                Math.max(position.x, Math.min(cam.x, position.x + sX)),
+                Math.max(position.y, Math.min(cam.y, position.y + sY)),
+                Math.max(position.z, Math.min(cam.z, position.z + sZ))
+        );
+
+        /*Vector3f furthestPointOnBoxToCam = new Vector3f(
+                (position.x + sX) - nearestPointOnBoxToCam.x,
+                (position.y + sY) - nearestPointOnBoxToCam.y,
+                (position.z + sZ) - nearestPointOnBoxToCam.z
+        );*/
+
+        return Math.abs(nearestPointOnBoxToCam.distance(cam));
+    }
 }

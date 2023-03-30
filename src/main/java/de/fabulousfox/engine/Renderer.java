@@ -241,7 +241,7 @@ public class Renderer {
 
         gBufferALBEDO = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, gBufferALBEDO);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gBufferALBEDO, 0);
@@ -294,7 +294,11 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_);
+        glDepthFunc(GL_LESS);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,7 +320,7 @@ public class Renderer {
 
         s.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
-        models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
+        models.sort(Comparator.comparing(model -> model.getDistance(position)));
 
         for (Model model : models) {
             glActiveTexture(GL_TEXTURE5);
@@ -336,6 +340,7 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
