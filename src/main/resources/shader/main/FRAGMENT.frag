@@ -111,6 +111,21 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     return DDAResult(voxel, mask, length(position - pos), pos, ao);
 }
 
+struct faceCollission{
+    bool hit;
+    vec3 position;
+};
+
+faceCollission getFaceCollission(vec3 face, vec3 rayStart, vec3 rayDirection, vec3 boxSize){
+    vec3 facePosition = vec3(face.x > 0 ? boxSize.x : 0, face.y > 0 ? boxSize.y : 0, face.z > 0 ? boxSize.z : 0);
+    float t = dot(facePosition - rayStart, face) / dot(rayDirection, face);
+    vec3 hitPoint = rayStart + rayDirection * t;
+    if(t > 0. && hitPoint.x <= 0 + boxSize.x && hitPoint.y >= 0 && hitPoint.y <= 0 + boxSize.y && hitPoint.z >= 0 && hitPoint.z <= 0 + boxSize.z){
+        return faceCollission(true, hitPoint);
+    }
+    return faceCollission(false, vec3(0));
+}
+
 void main(){
     //if(gl_FragCoord.z > texelFetch(gBufferDEPTH_READ, ivec2(gl_FragCoord.xy), 0).r) discard;
 
@@ -129,16 +144,37 @@ void main(){
 
     vec3 rayDir = normalize(position - fragPos);
     vec3 fragmentOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    vec3 boxSize = vec3(sizeX, sizeY, sizeZ);
 
-    // Get which face of the cube the ray with origin fragmentOffset and the direction rayDir is pointing at
-    bvec3 face;
-    if(abs(rayDir.x) > abs(rayDir.y) && abs(rayDir.x) > abs(rayDir.z)){
-        face = bvec3(rayDir.x > 0, false, false);
-    }else if(abs(rayDir.y) > abs(rayDir.x) && abs(rayDir.y) > abs(rayDir.z)){
-        face = bvec3(false, rayDir.y > 0, false);
-    } else{
-        face = bvec3(false, false, rayDir.z > 0);
+    // The fragmentOffset is inside a back face of the cube. We need to get the front face of the cube that the ray is pointing at
+    // We can do this by casting a ray from the fragmentOffset to the player position and getting the first face that the ray hits
+
+    faceCollission coll;
+
+    // Face +x
+    coll = getFaceCollission(vec3(1, 0, 0), fragmentOffset, rayDir, boxSize);
+    if(!coll.hit) coll = getFaceCollission(vec3(-1, 0, 0), fragmentOffset, rayDir, boxSize);
+    if(!coll.hit) coll = getFaceCollission(vec3(0, 1, 0), fragmentOffset, rayDir, boxSize);
+    if(!coll.hit) coll = getFaceCollission(vec3(0, -1, 0), fragmentOffset, rayDir, boxSize);
+    if(!coll.hit) coll = getFaceCollission(vec3(0, 0, 1), fragmentOffset, rayDir, boxSize);
+    if(!coll.hit) coll = getFaceCollission(vec3(0, 0, -1), fragmentOffset, rayDir, boxSize);
+
+    if(coll.hit){
+        gBufferALBEDO = vec4(coll.position, 1);
+        gBufferNORMAL = vec3(coll.position);
+        gBufferLIGHTING = vec3(1);
+        return;
+    }else{
+        gBufferALBEDO = vec4(0);
+        gBufferNORMAL = vec3(0);
+        gBufferLIGHTING = vec3(1);
+        return;
     }
+
+    /*gBufferALBEDO = vec4(0);
+    gBufferNORMAL = vec3(0);
+    gBufferLIGHTING = vec3(0);
+    return;
 
     // Get which face of the cube the ray with origin fragPos and the direction rayDir is pointing at
 
@@ -155,7 +191,7 @@ void main(){
 
 
 
-    /*// Get voxel
+    // Get voxel
     DDAResult dda = raycastDDA(position, rayDir, mask);
     gBufferALBEDO = dda.color;
     gBufferNORMAL = vec3(dda.normal);
