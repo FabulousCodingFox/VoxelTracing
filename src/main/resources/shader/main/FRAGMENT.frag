@@ -73,7 +73,7 @@ float calculateHyperbolicDepth(float distance, float zn, int zf){
     return ((1. / distance) - (1. / zn)) / ((1. / float(zf)) - (1. / zn));
 }
 
-DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
+DDAResult raycastDDA(vec3 rayPos, vec3 rayDir){
     // DDA
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
@@ -81,6 +81,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
     vec4 voxel = vec4(0.);
     float ao = 1.;
+    bvec3 mask = bvec3(false);
 
     for (int i = 0; i < sizeX + sizeY + sizeZ; i++){
         if(mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
@@ -111,7 +112,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     return DDAResult(voxel, mask, length(position - pos), pos, ao);
 }
 
-struct faceCollission{
+/*struct faceCollission{
     bool hit;
     vec3 position;
 };
@@ -124,6 +125,12 @@ faceCollission getFaceCollission(vec3 face, vec3 rayStart, vec3 rayDirection, ve
         return faceCollission(true, hitPoint);
     }
     return faceCollission(false, vec3(0));
+}*/
+
+void swap(float a, float b){
+    float temp = a;
+    a = b;
+    b = temp;
 }
 
 void main(){
@@ -139,20 +146,20 @@ void main(){
     // 0, 1, 1: 0, sizeY, sizeZ
     // 1, 1, 1: sizeX, sizeY, sizeZ
 
-    //vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+
     //vec3 totalOffset = (((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ)) - playerOffset;
 
-    vec3 rayDir = normalize(position - fragPos);
-    vec3 fragmentOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
-    vec3 boxSize = vec3(sizeX, sizeY, sizeZ);
+    //vec3 rayDir = normalize(position - fragPos);
+    //vec3 fragmentOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    //vec3 boxSize = vec3(sizeX, sizeY, sizeZ);
 
     // The fragmentOffset is inside a back face of the cube. We need to get the front face of the cube that the ray is pointing at
     // We can do this by casting a ray from the fragmentOffset to the player position and getting the first face that the ray hits
 
-    faceCollission coll;
+    //faceCollission coll;
 
     // Face +x
-    coll = getFaceCollission(vec3(1, 0, 0), fragmentOffset, rayDir, boxSize);
+    /*coll = getFaceCollission(vec3(1, 0, 0), fragmentOffset, rayDir, boxSize);
     if(!coll.hit) coll = getFaceCollission(vec3(-1, 0, 0), fragmentOffset, rayDir, boxSize);
     if(!coll.hit) coll = getFaceCollission(vec3(0, 1, 0), fragmentOffset, rayDir, boxSize);
     if(!coll.hit) coll = getFaceCollission(vec3(0, -1, 0), fragmentOffset, rayDir, boxSize);
@@ -169,7 +176,7 @@ void main(){
         gBufferNORMAL = vec3(0);
         gBufferLIGHTING = vec3(1);
         return;
-    }
+    }*/
 
     /*gBufferALBEDO = vec4(0);
     gBufferNORMAL = vec3(0);
@@ -197,19 +204,9 @@ void main(){
     gBufferNORMAL = vec3(dda.normal);
     gBufferLIGHTING = vec3(dda.ao);*/
 
-    /*bool playerOutsideOfBox = false;//playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
-    if(playerOutsideOfBox != gl_FrontFacing) discard;
+    //bool playerOutsideOfBox = false;//playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
 
-    vec2 uv = uvData.xy;
-    float normal = uvData.z;
-    vec4 col = vec4(1., 0., 0., 1.);
-
-    vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
-    dir.z = -dir.z;
-    vec3 start;
-    bvec3 mask;
-
-    if(playerOutsideOfBox){
+    /*if(playerOutsideOfBox){
         if (isNear(normal, 0.)){
             float pixelX = uv.x * float(sizeX);
             float pixelY = uv.y * float(sizeY);
@@ -251,19 +248,8 @@ void main(){
             start = vec3(pixelX, 0., pixelZ);
             mask = bvec3(false, true, false);
         }
-    }
+    }*/
 
-
-
-    start = playerOffset;
-    start.z = sizeZ - start.z;
-
-    DDAResult c = raycastDDA(start, dir, mask);
-    if(c.color.a < .5) discard;
-
-    gBufferALBEDO = c.color;
-    gBufferNORMAL = vec3(c.normal);
-    gBufferLIGHTING = vec3(c.ao);
 
     //gBufferMATERIAL = vec4(0., 0., 1., 0.);
     //if(isNear(gBufferALBEDO.y, .0)){
@@ -272,14 +258,14 @@ void main(){
 
     //gBufferALBEDO = vec4(vec3(texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r), 1.);
 
-    float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+
     //float hyperbolicDepth = calculateHyperbolicDepth(c.distance, zNear, zFar);
     // float linearDepth = c.distance / 10.;
     //if(hyperbolicDepth > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
     //gBufferPosition = vec4(c.position, hyperbolicDepth);
     //gBufferDEPTH_WRITE = linearDepth;
     //gBufferDEPTH_WRITE = hyperbolicDepth;
-    gl_FragDepth = hyperbolicDepth;
+
 
     //storeFloatImageDEPTH(gl_FragCoord.xy, .9);//hyperbolicDepth);
 
@@ -287,4 +273,59 @@ void main(){
     //storeFloatImage(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
     //imageAtomicExchange(gBufferDEPTH, ivec2(gl_FragCoord.xy), uint(intFromDecimalPlaces(hyperbolicDepth)));*/
 
+
+
+
+    // Camera offset relative to the box origin (0, 0, 0)
+    vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    vec3 fragOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
+    vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
+    dir.z = -dir.z;
+    vec3 invdir = 1. / dir;
+    vec3 start = playerOffset;
+
+
+
+
+    if(playerOutsideOfBox){
+        // Box origin (0, 0, 0)
+        // Box size (sizeX, sizeY, sizeZ)
+        // Camera position (playerOffset.x, playerOffset.y, playerOffset.z)
+        // Ray direction (dir.x, dir.y, dir.z)
+        // Calculate intersection point with the box
+        // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+
+        float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+        tmin = (0. - playerOffset.x) / invdir.x;
+        tmax = (sizeX - playerOffset.x) / invdir.x;
+        tymin = (0. - playerOffset.y) / invdir.y;
+        tymax = (sizeY - playerOffset.y) / invdir.y;
+
+        if (tmin > tymax || tymin > tmax) discard;
+        if (tymin > tmin) tmin = tymin;
+        if (tymax < tmax) tmax = tymax;
+
+        tzmin = (0. - playerOffset.z) / invdir.z;
+        tzmax = (sizeZ - playerOffset.z) / invdir.z;
+
+        if (tmin > tzmax || tzmin > tmax) discard;
+        if (tzmin > tmin) tmin = tzmin;
+        if (tzmax < tmax) tmax = tzmax;
+
+        start = playerOffset + tmin * dir;
+    }
+
+
+    start.z = sizeZ - start.z;
+    DDAResult c = raycastDDA(start, dir);
+    if(c.color.a < .5) discard;
+
+    gBufferALBEDO = c.color;
+    gBufferNORMAL = vec3(c.normal);
+    gBufferLIGHTING = vec3(c.ao);
+
+    float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
+    gl_FragDepth = hyperbolicDepth;
 }
