@@ -281,7 +281,6 @@ void main(){
     vec3 fragOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
     bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
     vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
-    dir.z = -dir.z;
     vec3 invdir = 1. / dir;
     vec3 start = playerOffset;
 
@@ -289,35 +288,24 @@ void main(){
 
 
     if(playerOutsideOfBox){
-        // Box origin (0, 0, 0)
-        // Box size (sizeX, sizeY, sizeZ)
-        // Camera position (playerOffset.x, playerOffset.y, playerOffset.z)
-        // Ray direction (dir.x, dir.y, dir.z)
-        // Calculate intersection point with the box
-        // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+        // Shooting a ray from fragOffset to playerOffset
+        // Get the position the ray collides with the box faces
+        // Get the face the ray is pointing at
 
-        float tmin, tmax, tymin, tymax, tzmin, tzmax;
+        float t1 = (0. - playerOffset.x) * invdir.x;
+        float t2 = (sizeX - playerOffset.x) * invdir.x;
+        float t3 = (0. - playerOffset.y) * invdir.y;
+        float t4 = (sizeY - playerOffset.y) * invdir.y;
+        float t5 = (0. - playerOffset.z) * invdir.z;
+        float t6 = (sizeZ - playerOffset.z) * invdir.z;
 
-        tmin = (0. - playerOffset.x) / invdir.x;
-        tmax = (sizeX - playerOffset.x) / invdir.x;
-        tymin = (0. - playerOffset.y) / invdir.y;
-        tymax = (sizeY - playerOffset.y) / invdir.y;
-
-        if (tmin > tymax || tymin > tmax) discard;
-        if (tymin > tmin) tmin = tymin;
-        if (tymax < tmax) tmax = tymax;
-
-        tzmin = (0. - playerOffset.z) / invdir.z;
-        tzmax = (sizeZ - playerOffset.z) / invdir.z;
-
-        if (tmin > tzmax || tzmin > tmax) discard;
-        if (tzmin > tmin) tmin = tzmin;
-        if (tzmax < tmax) tmax = tzmax;
+        float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+        float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
         start = playerOffset + tmin * dir;
     }
 
-
+    dir.z = -dir.z;
     start.z = sizeZ - start.z;
     DDAResult c = raycastDDA(start, dir);
     if(c.color.a < .5) discard;
