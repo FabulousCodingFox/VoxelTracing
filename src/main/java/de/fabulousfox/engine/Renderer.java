@@ -13,7 +13,6 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
@@ -44,6 +43,53 @@ public class Renderer {
     private int VBO_POST;
 
     private int gBuffer, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLIGHTING;
+
+
+    private float[] defaultCubeMesh = {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
+            1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f,
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
+
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0f,
+            1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0f,
+            1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0f,
+            1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0f,
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0f,
+            0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0f,
+
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 3f,
+            0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3f,
+            0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 3f,
+            0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3f,
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 3f,
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 3f,
+
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 2f,
+            1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 2f,
+            1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
+            1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
+            1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 2f,
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 2f,
+
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
+            1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 5f,
+            1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 5f,
+            1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 5f,
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 5f,
+
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 4f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 4f,
+            1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 4f,
+            1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 4f,
+            0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 4f,
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 4f
+    };
+
+    private int defaultCubeMeshVBO, defaultCubeMeshVAO;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
@@ -273,12 +319,27 @@ public class Renderer {
 
         //////////////////////////////////////////////////////////////////////////////////////
 
+        defaultCubeMeshVAO = glGenVertexArrays();
+        glBindVertexArray(defaultCubeMeshVAO);
+
+        defaultCubeMeshVBO = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, defaultCubeMeshVBO);
+        glBufferData(GL_ARRAY_BUFFER, defaultCubeMesh, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3 + 3) * 4, 0);
+        glEnableVertexAttribArray(0); // Position
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, (3 + 3) * 4, 4 * (3));
+        glEnableVertexAttribArray(1); // UV
+
+        glBindVertexArray(0);
+
+        //////////////////////////////////////////////////////////////////////////////////////
+
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
-        models.addAll(VoxelLoader.load("/models/menger.vox"));
-        //models.addAll(VoxelLoader.load("/models/castle.vox"));
+        //models.addAll(VoxelLoader.load("/models/menger.vox"));
+        models.addAll(VoxelLoader.load("/models/castle.vox"));
     }
 
     public boolean shouldClose() {
@@ -294,7 +355,7 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LEQUAL);
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
@@ -320,7 +381,7 @@ public class Renderer {
 
         s.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
-        models.sort(Comparator.comparing(model -> model.getDistance(position)));
+        Model.sortModelList(position, models);
 
         for (Model model : models) {
             glActiveTexture(GL_TEXTURE5);
@@ -328,7 +389,7 @@ public class Renderer {
             s.setInt("voxelTexture", 5);
 
             model.prepareShader(s);
-            glBindVertexArray(model.getVAO());
+            glBindVertexArray(defaultCubeMeshVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -338,6 +399,11 @@ public class Renderer {
         // Final Pass
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
@@ -374,13 +440,6 @@ public class Renderer {
         glBindVertexArray(VAO_POST);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -446,6 +505,10 @@ public class Renderer {
         glDeleteTextures(gBufferALBEDO);
         glDeleteTextures(gBufferNORMAL);
 
+        glDeleteBuffers(defaultCubeMeshVAO);
+        glDeleteBuffers(defaultCubeMeshVBO);
+
+        glDeleteBuffers(VBO_POST);
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);
         glfwTerminate();

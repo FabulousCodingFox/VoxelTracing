@@ -5,6 +5,9 @@ import de.fabulousfox.engine.wrapper.Texture3D;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.util.Comparator;
+import java.util.List;
+
 import static org.lwjgl.opengl.GL46.*;
 
 public class Model {
@@ -20,8 +23,6 @@ public class Model {
     private final int sizeY;
     private final int sizeZ;
 
-    private int vao, vbo;
-
     public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
         this.position = position;
 
@@ -36,63 +37,6 @@ public class Model {
         final float dimX = sizeX * VOXEL_SIZE;
         final float dimY = sizeY * VOXEL_SIZE;
         final float dimZ = sizeZ * VOXEL_SIZE;
-
-        float[] vertices = {
-                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
-                dimX, 0.0f, 0.0f, 1.0f, 0.0f, 1f,
-                dimX, dimY, 0.0f, 1.0f, 1.0f, 1f,
-                dimX, dimY, 0.0f, 1.0f, 1.0f, 1f,
-                0.0f, dimY, 0.0f, 0.0f, 1.0f, 1f,
-                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
-
-                0.0f, 0.0f, dimZ, 0.0f, 0.0f, 0f,
-                dimX, dimY, dimZ, 1.0f, 1.0f, 0f,
-                dimX, 0.0f, dimZ, 1.0f, 0.0f, 0f,
-                dimX, dimY, dimZ, 1.0f, 1.0f, 0f,
-                0.0f, 0.0f, dimZ, 0.0f, 0.0f, 0f,
-                0.0f, dimY, dimZ, 0.0f, 1.0f, 0f,
-
-                0.0f, 0.0f, dimZ, 1.0f, 1.0f, 3f,
-                0.0f, dimY, 0.0f, 0.0f, 0.0f, 3f,
-                0.0f, dimY, dimZ, 1.0f, 0.0f, 3f,
-                0.0f, dimY, 0.0f, 0.0f, 0.0f, 3f,
-                0.0f, 0.0f, dimZ, 1.0f, 1.0f, 3f,
-                0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 3f,
-
-                dimX, dimY, dimZ, 0.0f, 0.0f, 2f,
-                dimX, dimY, 0.0f, 1.0f, 0.0f, 2f,
-                dimX, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
-                dimX, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
-                dimX, 0.0f, dimZ, 0.0f, 1.0f, 2f,
-                dimX, dimY, dimZ, 0.0f, 0.0f, 2f,
-
-                0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
-                dimX, 0.0f, dimZ, 1.0f, 0.0f, 5f,
-                dimX, 0.0f, 0.0f, 1.0f, 1.0f, 5f,
-                dimX, 0.0f, dimZ, 1.0f, 0.0f, 5f,
-                0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
-                0.0f, 0.0f, dimZ, 0.0f, 0.0f, 5f,
-
-                0.0f, dimY, 0.0f, 0.0f, 1.0f, 4f,
-                dimX, dimY, 0.0f, 1.0f, 1.0f, 4f,
-                dimX, dimY, dimZ, 1.0f, 0.0f, 4f,
-                dimX, dimY, dimZ, 1.0f, 0.0f, 4f,
-                0.0f, dimY, dimZ, 0.0f, 0.0f, 4f,
-                0.0f, dimY, 0.0f, 0.0f, 1.0f, 4f
-        };
-
-        vao = glGenVertexArrays();
-        glBindVertexArray(vao);
-
-        vbo = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3 + 3) * 4, 0);
-        glEnableVertexAttribArray(0); // Position
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, (3 + 3) * 4, 4 * (3));
-        glEnableVertexAttribArray(1); // UV
-
-        glBindVertexArray(0);
     }
 
     public void prepareShader(Shader shader) {
@@ -109,10 +53,6 @@ public class Model {
         return id;
     }
 
-    public int getVAO() {
-        return vao;
-    }
-
     public Vector3f getPosition() {
         return position;
     }
@@ -122,13 +62,15 @@ public class Model {
     }
 
     public void remove() {
-        glDeleteVertexArrays(vao);
-        glDeleteBuffers(vbo);
         data.remove();
     }
 
     public Vector3f getSize() {
         return new Vector3f(sizeX, sizeY, sizeZ);
+    }
+
+    public void syncCreateData() {
+        data.create();
     }
 
     public double getDistance(Vector3f cam) {
@@ -142,12 +84,16 @@ public class Model {
                 Math.max(position.z, Math.min(cam.z, position.z + sZ))
         );
 
-        /*Vector3f furthestPointOnBoxToCam = new Vector3f(
+        Vector3f furthestPointOnBoxToCam = new Vector3f(
                 (position.x + sX) - nearestPointOnBoxToCam.x,
                 (position.y + sY) - nearestPointOnBoxToCam.y,
                 (position.z + sZ) - nearestPointOnBoxToCam.z
-        );*/
+        );
 
-        return Math.abs(nearestPointOnBoxToCam.distance(cam));
+        return Math.abs(furthestPointOnBoxToCam.distance(cam));
+    }
+
+    public static void sortModelList(Vector3f cameraPosition, List<Model> models) {
+        models.sort(Comparator.comparing(model -> model.getDistance(cameraPosition)));
     }
 }

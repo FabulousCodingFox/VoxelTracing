@@ -39,6 +39,9 @@ void main(){
         col = vec4(1., 0., 1., 1.);
     }
 
+    col.x *= uvData.x / 2. + .5;
+    col.y *= uvData.x / 2. + .5;
+
     gBufferALBEDO = col;
     gBufferNORMAL = col.xyz;
     gBufferLIGHTING = col.xyz;

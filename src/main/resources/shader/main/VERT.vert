@@ -9,9 +9,21 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform int sizeX;
+uniform int sizeY;
+uniform int sizeZ;
+
+uniform float voxelSize;
+
 void main()
 {
-    gl_Position = projection * view * model * vec4(inputPosition, 1.0);
-    fragPos = vec4(model * vec4(inputPosition, 1.0)).xyz;
+    vec3 vertPosition = inputPosition;
+
+    if(vertPosition.x > 0.5) vertPosition.x = voxelSize * sizeX;
+    if(vertPosition.y > 0.5) vertPosition.y = voxelSize * sizeY;
+    if(vertPosition.z > 0.5) vertPosition.z = voxelSize * sizeZ;
+
+    gl_Position = projection * view * model * vec4(vertPosition, 1.0);
+    fragPos = vec4(model * vec4(vertPosition, 1.0)).xyz;
     uvData = inputUV;
 }

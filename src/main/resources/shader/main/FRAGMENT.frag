@@ -23,7 +23,7 @@ uniform float voxelSize;
 uniform vec3 position;
 uniform vec3 direction;
 
-uniform float zNear;
+const float zNear = 0.1f;
 const int zFar = 2000;
 const float PI = 3.1415926535897932384626433832795;
 
