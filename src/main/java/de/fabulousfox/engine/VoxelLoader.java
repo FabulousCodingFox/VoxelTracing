@@ -72,11 +72,19 @@ public class VoxelLoader {
         try (VoxReader reader = new VoxReader(new FileInputStream("C:/Users/fabif/IdeaProjects/VoxelTracing/src/main/resources" + path))) {
             VoxFile voxFile = reader.read();
             ConcurrentLinkedQueue<VoxModelInstance> modelInstances = new ConcurrentLinkedQueue<>(voxFile.getModelInstances());
+            System.out.println("[VOXLOADER] Found " + modelInstances.size() + " model instances");
             while (!modelInstances.isEmpty()) {
                 refreshThreadPool(threadPool, modelInstances, voxFile, models);
             }
+            for(Thread thread : threadPool) {
+                if(thread != null) {
+                    thread.join();
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
         System.out.println("[VOXLOADER] Loaded " + models.size() + " models");
@@ -86,7 +94,7 @@ public class VoxelLoader {
             model.syncCreateData();
             counter++;
 
-            if (counter % 100 == 0) System.out.println("Loaded texture data " + counter + "/" + models.size());
+            if (counter % 100 == 0) System.out.println("[VOXLOADER] Loaded texture data " + counter + "/" + models.size());
         }
 
         return models;
