@@ -8,8 +8,6 @@ import org.joml.Vector3f;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.lwjgl.opengl.GL46.*;
-
 public class Model {
     public static final float VOXEL_SIZE = 0.05f;
 
@@ -33,10 +31,6 @@ public class Model {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
-
-        final float dimX = sizeX * VOXEL_SIZE;
-        final float dimY = sizeY * VOXEL_SIZE;
-        final float dimZ = sizeZ * VOXEL_SIZE;
     }
 
     public void prepareShader(Shader shader) {

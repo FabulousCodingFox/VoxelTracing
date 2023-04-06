@@ -21,8 +21,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memUTF8;
 
 public class Renderer {
-    private final int ZFAR = 2000;//2147483647;
-    private final float ZNEAR = 0.1f;
+    private static final int ZFAR = 2000;//2147483647;
+    private static final float ZNEAR = 0.1f;
 
     private final long window;
     private int windowWidth, windowHeight;
@@ -37,15 +37,14 @@ public class Renderer {
 
     private final Shader SHADER_GRID, SHADER_POST, SHADER_GRID_DEBUG_CUBE;
 
-    private ArrayList<Model> models;
+    private final ArrayList<Model> models;
 
-    private int VAO_POST;
-    private int VBO_POST;
+    private final int VAO_POST;
+    private final int VBO_POST;
 
-    private int gBuffer, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLIGHTING;
+    private final int gBuffer, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLIGHTING;
 
-
-    private float[] defaultCubeMesh = {
+    private final static float[] defaultCubeMesh = {
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
             1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1f,
             1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f,
@@ -89,7 +88,7 @@ public class Renderer {
             0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 4f
     };
 
-    private int defaultCubeMeshVBO, defaultCubeMeshVAO;
+    private final int defaultCubeMeshVBO, defaultCubeMeshVAO;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
@@ -142,7 +141,7 @@ public class Renderer {
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-        });;
+        });
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,15 +165,13 @@ public class Renderer {
             );
         }
 
-        glfwSetErrorCallback((window, error) -> {
-            System.err.println("GLFW Error: " + error);
-        });
+        glfwSetErrorCallback((window, error) -> System.err.println("GLFW Error: " + error));
 
         //////////////////////////////////////////////////////////////////////////////////////
 
         System.out.println("Initializing GLFW OpenGL Context...");
         glfwMakeContextCurrent(window);
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
         glfwShowWindow(window);
 
         GL.createCapabilities();
@@ -225,7 +222,7 @@ public class Renderer {
                 default -> source + "";
             };
 
-            System.out.println("OpenGL ["+pSource+"]["+pType+"]["+pSeverity+"]["+pID+"]: " + memUTF8(message));
+            System.out.println("OpenGL [" + pSource + "][" + pType + "][" + pSeverity + "][" + pID + "]: " + memUTF8(message));
         }, NULL);
 
 
@@ -338,9 +335,9 @@ public class Renderer {
 
         models = new ArrayList<>();
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
-        //models.addAll(VoxelLoader.load("/models/menger.vox"));
+        models.addAll(VoxelLoader.load("/models/menger.vox"));
         //models.addAll(VoxelLoader.load("/models/castle.vox"));
-        models.addAll(VoxelLoader.load("/models/castle_full.vox"));
+        //models.addAll(VoxelLoader.load("/models/castle_full.vox"));
     }
 
     public boolean shouldClose() {

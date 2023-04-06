@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class VoxelLoader {
-    private static void refreshThreadPool(Thread[] threadPool, ConcurrentLinkedQueue<VoxModelInstance> modelInstances, VoxFile voxFile, ArrayList<Model> models){
-        for(int i = 0; i < threadPool.length; i++){
+    private static void refreshThreadPool(Thread[] threadPool, ConcurrentLinkedQueue<VoxModelInstance> modelInstances, VoxFile voxFile, ArrayList<Model> models) {
+        for (int i = 0; i < threadPool.length; i++) {
             Thread thread = threadPool[i];
-            if(thread == null || !thread.isAlive()){
+            if (thread == null || !thread.isAlive()) {
                 thread = new Thread(() -> {
                     VoxModelInstance model_instance = modelInstances.poll();
-                    if(model_instance == null) return;
+                    if (model_instance == null) return;
 
                     GridPoint3 world_Offset = model_instance.worldOffset;
                     VoxModelBlueprint model = model_instance.model;
@@ -69,24 +69,24 @@ public class VoxelLoader {
 
         System.out.println("[VOXLOADER] Loading models from " + path);
 
-        try (VoxReader reader = new VoxReader(new FileInputStream("C:/Users/fabif/IdeaProjects/VoxelTracing/src/main/resources"+ path))) {
+        try (VoxReader reader = new VoxReader(new FileInputStream("C:/Users/fabif/IdeaProjects/VoxelTracing/src/main/resources" + path))) {
             VoxFile voxFile = reader.read();
             ConcurrentLinkedQueue<VoxModelInstance> modelInstances = new ConcurrentLinkedQueue<>(voxFile.getModelInstances());
-            while (!modelInstances.isEmpty()){
+            while (!modelInstances.isEmpty()) {
                 refreshThreadPool(threadPool, modelInstances, voxFile, models);
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         System.out.println("[VOXLOADER] Loaded " + models.size() + " models");
 
         int counter = 0;
-        for(Model model: models){
+        for (Model model : models) {
             model.syncCreateData();
             counter++;
 
-            if(counter % 100 == 0) System.out.println("Loaded texture data " + counter + "/" + models.size());
+            if (counter % 100 == 0) System.out.println("Loaded texture data " + counter + "/" + models.size());
         }
 
         return models;
