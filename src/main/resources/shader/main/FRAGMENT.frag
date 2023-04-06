@@ -55,7 +55,7 @@ bool getIfVoxelAtXYZ(vec3 p){
 
 float calcVertexAo(vec2 side, float corner) {
     //if (side.x == 1.0 && side.y == 1.0) return 1.0;
-    return (side.x + side.y + max(corner, side.x * side.y)) / 3.0;
+    return (side.x + side.y + max(corner, side.x * side.y)) / 4.0;
 }
 
 vec4 calcVoxelAo(vec3 pos, vec3 d1, vec3 d2) {
