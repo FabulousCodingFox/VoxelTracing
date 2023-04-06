@@ -7,7 +7,7 @@ layout (location = 2) out vec3 gBufferLIGHTING;
 in vec3 uvData;
 in vec3 fragPos;
 
-layout (depth_less) out float gl_FragDepth;
+layout (depth_any) out float gl_FragDepth;
 
 uniform sampler3D dataContainer;
 
