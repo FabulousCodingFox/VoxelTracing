@@ -2,9 +2,7 @@
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
-layout (location = 2) out vec4 gBufferMATERIAL;
-layout (location = 3) out vec4 gBufferPosition;
-layout (location = 4) out vec3 gBufferLIGHTING;
+layout (location = 2) out vec3 gBufferLIGHTING;
 
 in vec3 uvData;
 in vec3 fragPos;
@@ -41,9 +39,10 @@ void main(){
         col = vec4(1., 0., 1., 1.);
     }
 
+    col.x *= uvData.x / 2. + .5;
+    col.y *= uvData.x / 2. + .5;
+
     gBufferALBEDO = col;
     gBufferNORMAL = col.xyz;
-    gBufferMATERIAL = vec4(1., 1., 1., 0.);
-    gBufferPosition = vec4(0., 0., 0., 0.);
     gBufferLIGHTING = col.xyz;
 }

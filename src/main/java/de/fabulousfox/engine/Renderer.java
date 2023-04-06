@@ -13,7 +13,6 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
@@ -43,8 +42,54 @@ public class Renderer {
     private int VAO_POST;
     private int VBO_POST;
 
-    private int gBuffer, gBufferPOSITION, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferMATERIAL, gBufferLIGHTING, gBufferDEPTH_WRITE;
-    private int gBufferDEPTH_READ;
+    private int gBuffer, gBufferRboDepth, gBufferALBEDO, gBufferNORMAL, gBufferLIGHTING;
+
+
+    private float[] defaultCubeMesh = {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
+            1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f,
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1f,
+
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0f,
+            1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0f,
+            1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0f,
+            1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0f,
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0f,
+            0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0f,
+
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 3f,
+            0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3f,
+            0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 3f,
+            0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3f,
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 3f,
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 3f,
+
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 2f,
+            1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 2f,
+            1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
+            1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2f,
+            1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 2f,
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 2f,
+
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
+            1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 5f,
+            1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 5f,
+            1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 5f,
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 5f,
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 5f,
+
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 4f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 4f,
+            1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 4f,
+            1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 4f,
+            0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 4f,
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 4f
+    };
+
+    private int defaultCubeMeshVBO, defaultCubeMeshVAO;
 
     public Renderer(int windowWidth, int windowHeight, String windowTitle) {
         this.windowWidth = windowWidth;
@@ -93,22 +138,6 @@ public class Renderer {
             this.windowHeight = height;
             glViewport(0, 0, width, height);
             projectionMatrix = getProjectionMatrix();
-
-            // Resize Framebuffer
-            /*glBindFramebuffer(GL_FRAMEBUFFER, FRAMEBUFFER);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FRAMEBUFFER_COLORBUFFER, 0);
-            glBindRenderbuffer(GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FRAMEBUFFER_RENDERBUFFER1);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindRenderbuffer(GL_RENDERBUFFER, 0);*/
         });
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -145,7 +174,7 @@ public class Renderer {
 
         System.out.println("Initializing GLFW OpenGL Context...");
         glfwMakeContextCurrent(window);
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
         glfwShowWindow(window);
 
         GL.createCapabilities();
@@ -258,7 +287,7 @@ public class Renderer {
 
         gBufferALBEDO = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, gBufferALBEDO);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gBufferALBEDO, 0);
@@ -270,35 +299,14 @@ public class Renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gBufferNORMAL, 0);
 
-        gBufferMATERIAL = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, gBufferMATERIAL);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, windowWidth, windowHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBufferMATERIAL, 0);
-
-        gBufferPOSITION = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gBufferPOSITION, 0);
-
         gBufferLIGHTING = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, gBufferLIGHTING);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gBufferLIGHTING, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBufferLIGHTING, 0);
 
-        gBufferDEPTH_WRITE = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_WRITE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, gBufferDEPTH_WRITE, 0);
-
-        int[] attachments = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5};
+        int[] attachments = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
         glDrawBuffers(attachments);
 
         gBufferRboDepth = glGenRenderbuffers();
@@ -309,11 +317,20 @@ public class Renderer {
             throw new RuntimeException("Framebuffer not complete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        gBufferDEPTH_READ = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_READ);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //////////////////////////////////////////////////////////////////////////////////////
+
+        defaultCubeMeshVAO = glGenVertexArrays();
+        glBindVertexArray(defaultCubeMeshVAO);
+
+        defaultCubeMeshVBO = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, defaultCubeMeshVBO);
+        glBufferData(GL_ARRAY_BUFFER, defaultCubeMesh, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, (3 + 3) * 4, 0);
+        glEnableVertexAttribArray(0); // Position
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, (3 + 3) * 4, 4 * (3));
+        glEnableVertexAttribArray(1); // UV
+
+        glBindVertexArray(0);
 
         //////////////////////////////////////////////////////////////////////////////////////
 
@@ -321,8 +338,9 @@ public class Renderer {
 
         models = new ArrayList<>();
         //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
-        models.addAll(VoxelLoader.load("/models/menger.vox"));
+        //models.addAll(VoxelLoader.load("/models/menger.vox"));
         //models.addAll(VoxelLoader.load("/models/castle.vox"));
+        models.addAll(VoxelLoader.load("/models/castle_full.vox"));
     }
 
     public boolean shouldClose() {
@@ -338,6 +356,11 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,28 +379,19 @@ public class Renderer {
         s.setVector3f("rotation", direction.normalize());
 
         s.setFloat("zNear", ZNEAR);
-        s.setInt("zFar", ZFAR);
 
-        s.setInt("windowWidth", windowWidth);
-        s.setInt("windowHeight", windowHeight);
+        s.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
-        models.sort(Comparator.comparing(model -> model.getPosition().distance(position)));
+        Model.sortModelList(position, models);
 
         for (Model model : models) {
-            glActiveTexture(GL_TEXTURE10);
-            glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_READ);
-            s.setInt("gBufferDEPTH_READ", 10);
-
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
             s.setInt("voxelTexture", 5);
 
             model.prepareShader(s);
-            glBindVertexArray(model.getVAO());
+            glBindVertexArray(defaultCubeMeshVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
-
-            // Copy texture gBufferDepth_write to gBufferDepth_read
-            glCopyImageSubData(gBufferDEPTH_WRITE, GL_TEXTURE_2D, 0, 0, 0, 0, gBufferDEPTH_READ, GL_TEXTURE_2D, 0, 0, 0, 0, windowWidth, windowHeight, 1);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -387,7 +401,13 @@ public class Renderer {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -413,33 +433,14 @@ public class Renderer {
         SHADER_POST.setInt("gBufferNORMAL", 11);
 
         glActiveTexture(GL_TEXTURE12);
-        glBindTexture(GL_TEXTURE_2D, gBufferMATERIAL);
-        SHADER_POST.setInt("gBufferMATERIAL", 12);
-
-        glActiveTexture(GL_TEXTURE13);
-        glBindTexture(GL_TEXTURE_2D, gBufferPOSITION);
-        SHADER_POST.setInt("gBufferPOSITION", 13);
-
-        glActiveTexture(GL_TEXTURE14);
         glBindTexture(GL_TEXTURE_2D, gBufferLIGHTING);
-        SHADER_POST.setInt("gBufferLIGHTING", 14);
-
-        glActiveTexture(GL_TEXTURE15);
-        glBindTexture(GL_TEXTURE_2D, gBufferDEPTH_READ);
-        SHADER_POST.setInt("gBufferDEPTH", 15);
+        SHADER_POST.setInt("gBufferLIGHTING", 12);
 
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
         glBindVertexArray(VAO_POST);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -504,11 +505,11 @@ public class Renderer {
         glDeleteFramebuffers(gBuffer);
         glDeleteTextures(gBufferALBEDO);
         glDeleteTextures(gBufferNORMAL);
-        glDeleteTextures(gBufferMATERIAL);
 
-        glDeleteTextures(gBufferDEPTH_READ);
-        glDeleteTextures(gBufferDEPTH_WRITE);
+        glDeleteBuffers(defaultCubeMeshVAO);
+        glDeleteBuffers(defaultCubeMeshVBO);
 
+        glDeleteBuffers(VBO_POST);
         glDeleteVertexArrays(VAO_POST);
         glfwDestroyWindow(window);
         glfwTerminate();

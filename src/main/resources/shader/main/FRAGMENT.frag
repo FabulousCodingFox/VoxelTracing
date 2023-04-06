@@ -2,20 +2,16 @@
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
-layout (location = 2) out vec4 gBufferMATERIAL;
-layout (location = 3) out vec4 gBufferPosition;
-layout (location = 4) out vec3 gBufferLIGHTING;
-layout (location = 5) out float gBufferDEPTH_WRITE;
+layout (location = 2) out vec3 gBufferLIGHTING;
 
 in vec3 uvData;
 in vec3 fragPos;
 
+layout (depth_any) out float gl_FragDepth;
+
 uniform sampler3D dataContainer;
 
-uniform sampler2D gBufferDEPTH_READ;
-
-uniform int windowWidth;
-uniform int windowHeight;
+uniform vec2 iResolution;
 
 uniform int sizeX;
 uniform int sizeY;
@@ -27,11 +23,12 @@ uniform float voxelSize;
 uniform vec3 position;
 uniform vec3 direction;
 
-uniform float zNear;
+const float zNear = 0.1f;
 const int zFar = 2000;
+const float PI = 3.1415926535897932384626433832795;
 
-const int accuracy = 3;
-const int raycastExpandHitbox = 3;
+const int accuracy = 1;
+const int raycastExpandHitbox = 1;
 
 struct DDAResult{
     vec4 color;
@@ -72,10 +69,6 @@ vec4 calcVoxelAo(vec3 pos, vec3 d1, vec3 d2) {
     return 1.0 - ao;
 }
 
-float calculateHyperbolicDepth(float distance, float zn, int zf){
-    return ((1. / distance) - (1. / zn)) / ((1. / float(zf)) - (1. / zn));
-}
-
 DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     // DDA
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
@@ -108,75 +101,38 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
         mapPos += rayStep * ivec3(mask);
     }
 
-    // DISTANCE
     vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
 
     return DDAResult(voxel, mask, length(position - pos), pos, ao);
 }
 
 void main(){
-    //if(gl_FragCoord.z > texelFetch(gBufferDEPTH_READ, ivec2(gl_FragCoord.xy), 0).r) discard;
-
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
+    vec3 fragOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
     bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
-    if(playerOutsideOfBox != gl_FrontFacing) discard;
-
-    vec2 uv = uvData.xy;
-    float normal = uvData.z;
-    vec4 col = vec4(1., 0., 0., 1.);
-
     vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
-    dir.z = -dir.z;
-    vec3 start;
-    bvec3 mask;
+    vec3 invdir = 1. / dir;
+    vec3 start = playerOffset;
+    bvec3 mask = bvec3(false);
 
     if(playerOutsideOfBox){
-        if (isNear(normal, 0.)){
-            float pixelX = uv.x * float(sizeX);
-            float pixelY = uv.y * float(sizeY);
-            start = vec3(pixelX, pixelY, 0.);
-            mask = bvec3(false, false, true);
-        }
-
-        if (isNear(normal, 1.)){
-            float pixelX = uv.x * float(sizeX);
-            float pixelY = uv.y * float(sizeY);
-            start = vec3(pixelX, pixelY, sizeZ);
-            mask = bvec3(false, false, true);
-        }
-
-        if (isNear(normal, 2.)){
-            float pixelZ = uv.x * float(sizeZ);
-            float pixelY = uv.y * float(sizeY);
-            start = vec3(sizeX, sizeY - pixelY, pixelZ);
-            mask = bvec3(true, false, false);
-        }
-
-        if (isNear(normal, 3.)){
-            float pixelZ = uv.x * float(sizeZ);
-            float pixelY = uv.y * float(sizeY);
-            start = vec3(0., sizeY - pixelY, sizeZ - pixelZ);
-            mask = bvec3(true, false, false);
-        }
-
-        if (isNear(normal, 4.)){
-            float pixelX = uv.x * float(sizeX);
-            float pixelZ = uv.y * float(sizeZ);
-            start = vec3(pixelX, sizeY, pixelZ);
-            mask = bvec3(false, true, false);
-        }
-
-        if (isNear(normal, 5.)){
-            float pixelX = uv.x * float(sizeX);
-            float pixelZ = uv.y * float(sizeZ);
-            start = vec3(pixelX, 0., pixelZ);
-            mask = bvec3(false, true, false);
-        }
-    }else{
-        start = playerOffset;
-        start.z = sizeZ - start.z;
+        // Shooting a ray from fragOffset to playerOffset
+        // Get the position the ray collides with the box faces
+        // Get the face the ray is pointing at
+        float t1 = (0. - playerOffset.x) * invdir.x;
+        float t2 = (sizeX - playerOffset.x) * invdir.x;
+        float t3 = (0. - playerOffset.y) * invdir.y;
+        float t4 = (sizeY - playerOffset.y) * invdir.y;
+        float t5 = (0. - playerOffset.z) * invdir.z;
+        float t6 = (sizeZ - playerOffset.z) * invdir.z;
+        float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+        float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+        start = playerOffset + tmin * dir;
+        mask = bvec3(tmin == t1 || tmin == t2, tmin == t3 || tmin == t4, tmin == t5 || tmin == t6);
     }
 
+    dir.z = -dir.z;
+    start.z = sizeZ - start.z;
     DDAResult c = raycastDDA(start, dir, mask);
     if(c.color.a < .5) discard;
 
@@ -184,25 +140,6 @@ void main(){
     gBufferNORMAL = vec3(c.normal);
     gBufferLIGHTING = vec3(c.ao);
 
-    gBufferMATERIAL = vec4(0., 0., 1., 0.);
-    if(isNear(gBufferALBEDO.y, .0)){
-        gBufferMATERIAL.x = 1.;
-    }
-
-    //gBufferALBEDO = vec4(vec3(texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r), 1.);
-
-    //float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
-    float hyperbolicDepth = calculateHyperbolicDepth(c.distance, zNear, zFar);
-    // float linearDepth = c.distance / 10.;
-    //if(hyperbolicDepth > texelFetch(gBufferDEPTH, ivec2(gl_FragCoord.xy), 0).r) discard;
-    gBufferPosition = vec4(c.position, hyperbolicDepth);
-    //gBufferDEPTH_WRITE = linearDepth;
-    gBufferDEPTH_WRITE = hyperbolicDepth;
+    float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
     gl_FragDepth = hyperbolicDepth;
-
-    //storeFloatImageDEPTH(gl_FragCoord.xy, .9);//hyperbolicDepth);
-
-    //imageStore(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
-    //storeFloatImage(gBufferDEPTH, ivec2(gl_FragCoord.xy), hyperbolicDepth);
-    //imageAtomicExchange(gBufferDEPTH, ivec2(gl_FragCoord.xy), uint(intFromDecimalPlaces(hyperbolicDepth)));
 }
