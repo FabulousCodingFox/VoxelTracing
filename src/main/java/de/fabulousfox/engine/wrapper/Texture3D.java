@@ -17,7 +17,7 @@ public class Texture3D {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
-        this.image = BufferUtils.createByteBuffer(sizeX * sizeY * sizeZ * 8);
+        this.image = BufferUtils.createByteBuffer(sizeX * sizeY * sizeZ * 4);
         BufferUtils.zeroBuffer(image);
     }
 
