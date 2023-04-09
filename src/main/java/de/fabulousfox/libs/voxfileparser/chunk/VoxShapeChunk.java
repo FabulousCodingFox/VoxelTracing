@@ -25,7 +25,7 @@ public final class VoxShapeChunk extends VoxChunk {
 
         HashMap<String, String> dict = StreamUtils.readDictionary(stream);
         /*if (dict.size() > 0) {
-    		Settings.p("dict=" + dict);
+            Settings.p("dict=" + dict);
         }*/
 
         int num_models = StreamUtils.readIntLE(stream);
@@ -34,7 +34,7 @@ public final class VoxShapeChunk extends VoxChunk {
             int model_id = StreamUtils.readIntLE(stream);
             HashMap<String, String> model_dict = StreamUtils.readDictionary(stream);
             /*if (model_dict.size() > 0) {
-        		Settings.p("model_dict=" + dict);
+                Settings.p("model_dict=" + dict);
             }*/
 
             chunk.model_ids.add(model_id);

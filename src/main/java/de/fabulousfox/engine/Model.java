@@ -67,7 +67,7 @@ public class Model {
         data.create();
     }
 
-    public double getDistance(Vector3f cam) {
+    public double getDistance(Vector3f cam, boolean nearestPoint) {
         float sX = sizeX * VOXEL_SIZE;
         float sY = sizeY * VOXEL_SIZE;
         float sZ = sizeZ * VOXEL_SIZE;
@@ -84,10 +84,24 @@ public class Model {
                 (position.z + sZ) - nearestPointOnBoxToCam.z
         );
 
-        return Math.abs(furthestPointOnBoxToCam.distance(cam));
+        Vector3f comparePoint = nearestPoint ? nearestPointOnBoxToCam : furthestPointOnBoxToCam;
+        return Math.abs(comparePoint.distance(cam));
     }
 
-    public static void sortModelList(Vector3f cameraPosition, List<Model> models) {
-        models.sort(Comparator.comparing(model -> model.getDistance(cameraPosition)));
+    /*public static void sortModelList(Vector3f cameraPosition, List<Model> models) {
+        models.sort(Comparator.comparing(model -> model.getDistance(cameraPosition, true)));
+    }*/
+
+    public static void getSortedModelLists(Vector3f cameraPosition, List<Model> models, List<Model> modelsOutside, List<Model> modelsInside) {
+        for (Model model : models) {
+            if (cameraPosition.x > model.position.x && cameraPosition.x < model.position.x + model.sizeX * VOXEL_SIZE && cameraPosition.y > model.position.y && cameraPosition.y < model.position.y + model.sizeY * VOXEL_SIZE && cameraPosition.z > model.position.z && cameraPosition.z < model.position.z + model.sizeZ * VOXEL_SIZE) {
+                modelsInside.add(model);
+            } else {
+                modelsOutside.add(model);
+            }
+        }
+
+        modelsOutside.sort(Comparator.comparing(model -> model.getDistance(cameraPosition, true)));
+        modelsInside.sort(Comparator.comparing(model -> model.getDistance(cameraPosition, false)));
     }
 }

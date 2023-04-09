@@ -24,9 +24,9 @@ public final class VoxLayerChunk extends VoxChunk {
         chunk.id = StreamUtils.readIntLE(stream);
         HashMap<String, String> dict = StreamUtils.readDictionary(stream);
         //Settings.p("dict=" + dict);
-		/*if (dict.containsKey("_name")) {
-			Settings.p("Layer Name: " + dict.get("_name"));
-		}*/
+        /*if (dict.containsKey("_name")) {
+            Settings.p("Layer Name: " + dict.get("_name"));
+        }*/
         int reserved = StreamUtils.readIntLE(stream);
         return chunk;
     }

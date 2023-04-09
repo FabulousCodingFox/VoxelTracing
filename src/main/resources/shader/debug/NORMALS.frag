@@ -11,7 +11,7 @@ void main(){
     float normal = uvData.z;
     vec4 col = vec4(1., 0., 0., 1.);
 
-    if(gl_FrontFacing){
+    if (gl_FrontFacing){
         if (isNear(normal, 0.)){
             col = vec4(1., 0., 0., 1.);
         }
@@ -35,7 +35,7 @@ void main(){
         if (isNear(normal, 5.)){
             col = vec4(1., 0., 1., 1.);
         }
-    }else{
+    } else {
         if (isNear(normal, 1.)){
             col = vec4(1., 0., 0., 1.);
         }

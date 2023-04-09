@@ -23,9 +23,9 @@ public final class VoxTransformChunk extends VoxChunk {
         var id = StreamUtils.readIntLE(stream);
         var chunk = new VoxTransformChunk(id);
         HashMap<String, String> dict = StreamUtils.readDictionary(stream);
-		/*if (dict.containsKey("_name")) {
-			Settings.p("nTrn Name: " + dict.get("_name"));
-		}*/
+        /*if (dict.containsKey("_name")) {
+            Settings.p("nTrn Name: " + dict.get("_name"));
+        }*/
         // todo - check for "_hidden"
         chunk.child_node_id = StreamUtils.readIntLE(stream);
         int neg1 = StreamUtils.readIntLE(stream);

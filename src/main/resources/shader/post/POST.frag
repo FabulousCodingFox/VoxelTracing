@@ -13,16 +13,16 @@ uniform sampler2D gBufferLIGHTING;
 void main(){
     vec2 uv = gl_FragCoord.xy/iResolution.xy;
 
-    if(debugDisplayMode != 0){
-        if(debugDisplayMode == 1){
+    if (debugDisplayMode != 0){
+        if (debugDisplayMode == 1){
             FragColor = texture(gBufferALBEDO, uv);
             return;
         }
-        if(debugDisplayMode == 2){
+        if (debugDisplayMode == 2){
             FragColor = texture(gBufferNORMAL, uv);
             return;
         }
-        if(debugDisplayMode == 3){
+        if (debugDisplayMode == 3){
             FragColor = texture(gBufferLIGHTING, uv);
             return;
         }
@@ -32,9 +32,9 @@ void main(){
     vec3 normal = texture(gBufferNORMAL, uv).rgb;
     vec3 light = texture(gBufferLIGHTING, uv).rgb;
 
-    if(normal.x > .9) albedo.xyz *= 0.5;
-    if(normal.y > .9) albedo.xyz *= 1.0;
-    if(normal.z > .9) albedo.xyz *= 0.75;
+    if (normal.x > .9) albedo.xyz *= 0.5;
+    if (normal.y > .9) albedo.xyz *= 1.0;
+    if (normal.z > .9) albedo.xyz *= 0.75;
 
     albedo *= light;
 

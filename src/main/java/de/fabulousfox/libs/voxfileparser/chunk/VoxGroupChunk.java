@@ -24,7 +24,7 @@ public final class VoxGroupChunk extends VoxChunk {
         var chunk = new VoxGroupChunk(id);
         HashMap<String, String> dict = StreamUtils.readDictionary(stream);
         /*if (dict.size() > 0) {
-    		Settings.p("dict=" + dict);
+            Settings.p("dict=" + dict);
         }*/
         int num_children = StreamUtils.readIntLE(stream);
 

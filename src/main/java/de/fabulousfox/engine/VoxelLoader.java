@@ -86,8 +86,8 @@ public class VoxelLoader {
             while (!modelInstances.isEmpty()) {
                 refreshThreadPool(threadPool, modelInstances, voxFile, models);
             }
-            for(Thread thread : threadPool) {
-                if(thread != null) {
+            for (Thread thread : threadPool) {
+                if (thread != null) {
                     thread.join();
                 }
             }
@@ -104,7 +104,8 @@ public class VoxelLoader {
             model.syncCreateData();
             counter++;
 
-            if (counter % 100 == 0) System.out.println("[VOXLOADER] Loaded texture data " + counter + "/" + models.size());
+            if (counter % 100 == 0)
+                System.out.println("[VOXLOADER] Loaded texture data " + counter + "/" + models.size());
         }
 
         return models;
@@ -170,7 +171,7 @@ public class VoxelLoader {
         return models;*/
     }
 
-    public static List<Model> loadGVOX(String path){
+    public static List<Model> loadGVOX(String path) {
         GvoxContext gvox_ctx = Gvox.create_context();
 
         GvoxFileInputAdapterConfig input_config = new GvoxFileInputAdapterConfig() {{

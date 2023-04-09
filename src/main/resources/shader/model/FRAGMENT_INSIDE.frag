@@ -7,7 +7,7 @@ layout (location = 2) out vec3 gBufferLIGHTING;
 in vec3 uvData;
 in vec3 fragPos;
 
-layout (depth_any) out float gl_FragDepth;
+layout (depth_less) out float gl_FragDepth;
 
 uniform sampler3D dataContainer;
 
@@ -28,7 +28,7 @@ const int zFar = 2000;
 const float PI = 3.1415926535897932384626433832795;
 
 const int accuracy = 1;
-const int raycastExpandHitbox = 1;
+const int raycastExpandHitbox = 2;
 
 struct DDAResult{
     vec4 color;
@@ -42,10 +42,12 @@ bool isNear(float a, float b){
     return abs(a-b) < .01;
 }
 
-float sum(vec3 v) { return dot(v, vec3(1.0)); }
+float sum(vec3 v) {
+    return dot(v, vec3(1.0));
+}
 
 vec4 getVoxelAtXYZ(int x, int y, int z){
-    if(x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(0., 1., 0., 0.);
+    if (x < 0 || x >= sizeX || y < 0 || y >= sizeY || z < 0 || z >= sizeZ) return vec4(0., 1., 0., 0.);
     return texelFetch(dataContainer, ivec3(x, y, z), 0);
 }
 
@@ -79,10 +81,10 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     float ao = 1.;
 
     for (int i = 0; i < sizeX + sizeY + sizeZ; i++){
-        if(mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
+        if (mapPos.x < -raycastExpandHitbox || mapPos.x >= sizeX + raycastExpandHitbox || mapPos.y < -raycastExpandHitbox || mapPos.y >= sizeY + raycastExpandHitbox || mapPos.z < -raycastExpandHitbox || mapPos.z >= sizeZ + raycastExpandHitbox) break;
 
         voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
-        if(voxel.a > 0.999){
+        if (voxel.a > 0.999){
             // AO
             vec3 intersectPlane = mapPos + vec3(lessThan(rayDir, vec3(0)));
             vec3 endRayPos;
@@ -108,33 +110,22 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
 
 void main(){
     vec3 playerOffset = ((position - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
-    vec3 fragOffset = ((fragPos - modelPosition) / (vec3(sizeX, sizeY, sizeZ) * voxelSize)) * vec3(sizeX, sizeY, sizeZ);
-    bool playerOutsideOfBox = playerOffset.x < -accuracy || playerOffset.x > sizeX + accuracy || playerOffset.y < -accuracy || playerOffset.y > sizeY + accuracy || playerOffset.z < -accuracy || playerOffset.z > sizeZ + accuracy;
-    vec3 dir = normalize(fragPos - position); //vec3(0., 0., 1.);
-    vec3 invdir = 1. / dir;
-    vec3 start = playerOffset;
+
+    vec2 uv = uvData.xy;
+    float normal = uvData.z;
+    vec4 col = vec4(1., 0., 0., 1.);
+
+    vec3 dir = normalize(fragPos - position);
+    dir.z = -dir.z;
+    vec3 start;
     bvec3 mask = bvec3(false);
 
-    if(playerOutsideOfBox){
-        // Shooting a ray from fragOffset to playerOffset
-        // Get the position the ray collides with the box faces
-        // Get the face the ray is pointing at
-        float t1 = (0. - playerOffset.x) * invdir.x;
-        float t2 = (sizeX - playerOffset.x) * invdir.x;
-        float t3 = (0. - playerOffset.y) * invdir.y;
-        float t4 = (sizeY - playerOffset.y) * invdir.y;
-        float t5 = (0. - playerOffset.z) * invdir.z;
-        float t6 = (sizeZ - playerOffset.z) * invdir.z;
-        float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-        float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-        start = playerOffset + tmin * dir;
-        mask = bvec3(tmin == t1 || tmin == t2, tmin == t3 || tmin == t4, tmin == t5 || tmin == t6);
-    }
-
-    dir.z = -dir.z;
+    start = playerOffset;
     start.z = sizeZ - start.z;
+
     DDAResult c = raycastDDA(start, dir, mask);
-    if(c.color.a < .5) discard;
+
+    if (c.color.a < .5) discard;
 
     gBufferALBEDO = c.color;
     gBufferNORMAL = vec3(c.normal);

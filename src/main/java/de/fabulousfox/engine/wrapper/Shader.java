@@ -118,6 +118,10 @@ public class Shader {
         glUniform2fv(glGetUniformLocation(ID, name), new float[]{value.x, value.y});
     }
 
+    public void setVector2f(String name, float x, float y) {
+        glUniform2fv(glGetUniformLocation(ID, name), new float[]{x, y});
+    }
+
     public void setVector3f(String name, Vector3f value) {
         glUniform3fv(glGetUniformLocation(ID, name), new float[]{value.x, value.y, value.z});
     }

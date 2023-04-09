@@ -35,7 +35,7 @@ public class Renderer {
 
     private double lastMouseXP, lastMouseYP, mouseOffX, mouseOffY;
 
-    private final Shader SHADER_GRID, SHADER_POST, SHADER_GRID_DEBUG_CUBE;
+    private final Shader SHADER_MODEL_FRONT_FACES, SHADER_MODEL_BACK_FACES, SHADER_POST, SHADER_MODEL_FRONT_FACES_CUBE_DEBUG;
 
     private final ArrayList<Model> models;
 
@@ -252,20 +252,25 @@ public class Renderer {
 
         System.out.println("Initializing Shaders...");
 
-        System.out.println("SHADER_GRID_DEBUG");
-        SHADER_GRID = new Shader(
-                "shader/main/VERT.vert",
-                "shader/main/FRAGMENT.frag"
+        System.out.println("SHADER_MODEL_FRONT_FACES");
+        SHADER_MODEL_FRONT_FACES = new Shader(
+                "shader/model/VERT.vert",
+                "shader/model/FRAGMENT.frag"
+        );
+        System.out.println("SHADER_MODEL_BACK_FACES");
+        SHADER_MODEL_BACK_FACES = new Shader(
+                "shader/model/VERT.vert",
+                "shader/model/FRAGMENT_INSIDE.frag"
         );
         System.out.println("SHADER_POST_DEBUG");
         SHADER_POST = new Shader(
                 "shader/post/POST.vert",
                 "shader/post/POST.frag"
         );
-        System.out.println("SHADER_GRID_DEBUG_CUBE");
-        SHADER_GRID_DEBUG_CUBE = new Shader(
-                "shader/main/VERT.vert",
-                "shader/debug/CUBE.frag"
+        System.out.println("SHADER_MODEL_FRONT_FACES_CUBE_DEBUG");
+        SHADER_MODEL_FRONT_FACES_CUBE_DEBUG = new Shader(
+                "shader/model/VERT.vert",
+                "shader/debug/NORMALS.frag"
         );
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -334,10 +339,10 @@ public class Renderer {
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-        models.addAll(VoxelLoader.loadGVOX("/models/vehicle/boat/mediumboat.vox"));
+        //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
         //models.addAll(VoxelLoader.load("/models/menger.vox"));
         //models.addAll(VoxelLoader.load("/models/castle.vox"));
-        //models.addAll(VoxelLoader.load("/models/castle_full.vox"));
+        models.addAll(VoxelLoader.load("/models/castle_full.vox"));
     }
 
     public boolean shouldClose() {
@@ -349,39 +354,36 @@ public class Renderer {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        viewMatrix = getViewMatrix(position, direction);
+
+        ArrayList<Model> modelsOutside = new ArrayList<>();
+        ArrayList<Model> modelsInside = new ArrayList<>();
+        Model.getSortedModelLists(position, models, modelsOutside, modelsInside);
+
+        /**
+         * FIRST PASS: Render cube outside faces to gBuffer
+         */
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
 
         glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
+        glCullFace(GL_BACK);
         glFrontFace(GL_CW);
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // gBuffer Pass
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        viewMatrix = getViewMatrix(position, direction);
-        Shader s = glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS ? SHADER_GRID_DEBUG_CUBE : SHADER_GRID;
+
+        Shader s = glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS ? SHADER_MODEL_FRONT_FACES_CUBE_DEBUG : SHADER_MODEL_FRONT_FACES;
         s.use();
         s.setMatrix4f("projection", projectionMatrix);
         s.setMatrix4f("view", viewMatrix);
         s.setVector3f("position", position);
         s.setVector3f("rotation", direction.normalize());
+        s.setVector2f("iResolution", windowWidth, windowHeight);
 
-        s.setFloat("zNear", ZNEAR);
-
-        s.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
-
-        Model.sortModelList(position, models);
-
-        for (Model model : models) {
+        for (Model model : modelsOutside) {
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_3D, model.getTextureId());
             s.setInt("voxelTexture", 5);
@@ -390,13 +392,39 @@ public class Renderer {
             glBindVertexArray(defaultCubeMeshVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Final Pass
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /**
+         * SECOND PASS: Render cube inside faces to gBuffer
+         */
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);
+
+        s = glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS ? SHADER_MODEL_FRONT_FACES_CUBE_DEBUG : SHADER_MODEL_BACK_FACES;
+        s.use();
+        s.setMatrix4f("projection", projectionMatrix);
+        s.setMatrix4f("view", viewMatrix);
+        s.setVector3f("position", position);
+        s.setVector3f("rotation", direction.normalize());
+        s.setVector2f("iResolution", windowWidth, windowHeight);
+
+        for (Model model : modelsInside) {
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_3D, model.getTextureId());
+            s.setInt("voxelTexture", 5);
+
+            model.prepareShader(s);
+            glBindVertexArray(defaultCubeMeshVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        /**
+         * THIRD PASS: Render post quad
+         */
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -495,9 +523,9 @@ public class Renderer {
         for (Model model : models) {
             model.remove();
         }
-        SHADER_GRID.delete();
+        SHADER_MODEL_FRONT_FACES.delete();
         SHADER_POST.delete();
-        SHADER_GRID_DEBUG_CUBE.delete();
+        SHADER_MODEL_FRONT_FACES_CUBE_DEBUG.delete();
 
         glDeleteFramebuffers(gBuffer);
         glDeleteTextures(gBufferALBEDO);
