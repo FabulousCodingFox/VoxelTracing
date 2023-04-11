@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
-layout (location = 2) out vec3 gBufferLIGHTING;
+layout (location = 2) out vec3 gBufferPOSITION;
 
 in vec3 uvData;
 in vec3 fragPos;
@@ -127,9 +127,9 @@ void main(){
 
     if (c.color.a < .5) discard;
 
-    gBufferALBEDO = c.color;
+    gBufferALBEDO = c.color * c.ao;
     gBufferNORMAL = vec3(c.normal);
-    gBufferLIGHTING = vec3(c.ao);
+    gBufferPOSITION = c.position;
 
     float hyperbolicDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
     gl_FragDepth = hyperbolicDepth;

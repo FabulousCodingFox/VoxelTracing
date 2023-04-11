@@ -1,10 +1,11 @@
 package de.fabulousfox.engine;
 
 import de.fabulousfox.engine.wrapper.Texture3D;
-import de.fabulousfox.gvox_java.Gvox;
+import de.fabulousfox.gvox_java.GVOX;
 import de.fabulousfox.gvox_java.consumerapi.GvoxAdapterContext;
 import de.fabulousfox.gvox_java.consumerapi.GvoxContext;
 import de.fabulousfox.gvox_java.consumerapi.config.input.GvoxFileInputAdapterConfig;
+import de.fabulousfox.gvox_java.consumerapi.config.output.GvoxByteBufferOutputAdapterConfig;
 import de.fabulousfox.gvox_java.consumerapi.config.serialize.GvoxColoredTextSerializeAdapterConfig;
 import de.fabulousfox.gvox_java.enums.GvoxChannelBit;
 import de.fabulousfox.gvox_java.structs.GvoxExtent3D;
@@ -172,7 +173,7 @@ public class VoxelLoader {
     }
 
     public static List<Model> loadGVOX(String path) {
-        GvoxContext gvox_ctx = Gvox.create_context();
+        GvoxContext gvox_ctx = GVOX.create_context();
 
         GvoxFileInputAdapterConfig input_config = new GvoxFileInputAdapterConfig() {{
             filepath = "C:/Users/fabif/IdeaProjects/VoxelTracing/src/main/resources/models/menger.vox";
@@ -182,17 +183,19 @@ public class VoxelLoader {
             non_color_max_value = 255;
         }};
 
-        GvoxAdapterContext input_ctx = Gvox.create_adapter_context(gvox_ctx, Gvox.get_input_adapter(gvox_ctx, "file"), input_config);
-        GvoxAdapterContext output_ctx = Gvox.create_adapter_context(gvox_ctx, Gvox.get_output_adapter(gvox_ctx, "stdout"), null);
-        GvoxAdapterContext parse_ctx = Gvox.create_adapter_context(gvox_ctx, Gvox.get_parse_adapter(gvox_ctx, "magicavoxel"), null);
-        GvoxAdapterContext serialize_ctx = Gvox.create_adapter_context(gvox_ctx, Gvox.get_serialize_adapter(gvox_ctx, "colored_text"), serialize_config);
+        GvoxByteBufferOutputAdapterConfig output_config = new GvoxByteBufferOutputAdapterConfig();
+
+        GvoxAdapterContext input_ctx = GVOX.create_adapter_context(gvox_ctx, GVOX.get_input_adapter(gvox_ctx, "file"), input_config);
+        GvoxAdapterContext output_ctx = GVOX.create_adapter_context(gvox_ctx, GVOX.get_output_adapter(gvox_ctx, "buffer"), output_config);
+        GvoxAdapterContext parse_ctx = GVOX.create_adapter_context(gvox_ctx, GVOX.get_parse_adapter(gvox_ctx, "magicavoxel"), null);
+        GvoxAdapterContext serialize_ctx = GVOX.create_adapter_context(gvox_ctx, GVOX.get_serialize_adapter(gvox_ctx, "colored_text"), serialize_config);
 
         GvoxRegionRange range = new GvoxRegionRange(
                 new GvoxOffset3D(0, 0, 0),
                 new GvoxExtent3D(8, 8, 8)
         );
 
-        Gvox.blit_region(input_ctx, output_ctx, parse_ctx, serialize_ctx, range, List.of(
+        GVOX.blit_region(input_ctx, output_ctx, parse_ctx, serialize_ctx, range, List.of(
                 GvoxChannelBit.COLOR,
                 GvoxChannelBit.MATERIAL_ID,
                 GvoxChannelBit.ROUGHNESS,
@@ -200,14 +203,14 @@ public class VoxelLoader {
                 GvoxChannelBit.EMISSIVITY
         ));
 
-        Gvox.destroy_adapter_context(input_ctx);
-        Gvox.destroy_adapter_context(output_ctx);
-        Gvox.destroy_adapter_context(parse_ctx);
-        Gvox.destroy_adapter_context(serialize_ctx);
+        GVOX.destroy_adapter_context(input_ctx);
+        GVOX.destroy_adapter_context(output_ctx);
+        GVOX.destroy_adapter_context(parse_ctx);
+        GVOX.destroy_adapter_context(serialize_ctx);
 
-        Gvox.destroy_context(gvox_ctx);
+        GVOX.destroy_context(gvox_ctx);
 
-        Gvox.close();
+        GVOX.close();
 
         return List.of();
     }

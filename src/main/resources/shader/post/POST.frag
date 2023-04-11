@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 
 out vec4 FragColor;
 
@@ -8,6 +8,7 @@ uniform vec2 iResolution;
 
 uniform sampler2D gBufferALBEDO;
 uniform sampler2D gBufferNORMAL;
+uniform sampler2D gBufferPOSITION;
 uniform sampler2D gBufferLIGHTING;
 
 void main(){
@@ -23,20 +24,14 @@ void main(){
             return;
         }
         if (debugDisplayMode == 3){
+            FragColor = texture(gBufferPOSITION, uv);
+            return;
+        }
+        if (debugDisplayMode == 4){
             FragColor = texture(gBufferLIGHTING, uv);
             return;
         }
     }
 
-    vec3 albedo = texture(gBufferALBEDO, uv).rgb;
-    vec3 normal = texture(gBufferNORMAL, uv).rgb;
-    vec3 light = texture(gBufferLIGHTING, uv).rgb;
-
-    if (normal.x > .9) albedo.xyz *= 0.5;
-    if (normal.y > .9) albedo.xyz *= 1.0;
-    if (normal.z > .9) albedo.xyz *= 0.75;
-
-    albedo *= light;
-
-    FragColor = vec4(albedo, 1.);
+    FragColor = vec4(texture(gBufferALBEDO, uv).rgb * texture(gBufferLIGHTING, uv).rgb, 1.);
 }

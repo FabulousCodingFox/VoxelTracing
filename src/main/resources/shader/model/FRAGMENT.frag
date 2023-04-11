@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec4 gBufferALBEDO;
 layout (location = 1) out vec3 gBufferNORMAL;
-layout (location = 2) out vec3 gBufferLIGHTING;
+layout (location = 2) out vec3 gBufferPOSITION;
 
 in vec3 uvData;
 in vec3 fragPos;
@@ -76,7 +76,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
-    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * .5) + .5) * deltaDist;
     vec4 voxel = vec4(0.);
     float ao = 1.;
 
@@ -86,15 +86,11 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
         voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if (voxel.a > 0.999){
             // AO
-            vec3 intersectPlane = mapPos + vec3(lessThan(rayDir, vec3(0)));
-            vec3 endRayPos;
-            vec2 uv;
-            vec4 ambient;
-            ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
-            endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
-            vec2 aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.0)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.0))), vec2(1.0));
+            vec4 ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
+            vec3 endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
+            vec2 aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.))), vec2(1.));
             ao = mix(mix(ambient.z, ambient.w, aouv.x), mix(ambient.y, ambient.x, aouv.x), aouv.y);
-            ao = pow(ao, 1.0 / 3.0);
+            ao = pow(ao, 1. / 3.);
             break;
         }
 
@@ -103,9 +99,13 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
         mapPos += rayStep * ivec3(mask);
     }
 
-    vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
+    //vec3 pixelPositionAbsolute = modelPosition + (rayPos + rayDir * (length(mapPos - rayPos) - 0.5)) * voxelSize;
+    //vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
 
-    return DDAResult(voxel, mask, length(pos - position), pos, ao);
+    // Model position + voxel position + sub-voxel ray offset
+    vec3 worldSpacePosition = modelPosition + voxelSize * mapPos;
+
+    return DDAResult(voxel, mask, distance(worldSpacePosition, position), worldSpacePosition, ao);
 }
 
 void main(){
@@ -164,9 +164,9 @@ void main(){
 
     if (c.color.a < .5) discard;
 
-    gBufferALBEDO = c.color;
+    gBufferALBEDO = c.color * c.ao;
     gBufferNORMAL = vec3(c.normal);
-    gBufferLIGHTING = vec3(c.ao);
+    gBufferPOSITION = c.position;
 
     float distance = c.distance;
     float hyperbolicDepth = ((1. / distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));

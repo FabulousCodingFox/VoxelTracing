@@ -22,7 +22,7 @@ public class Client {
         this.yaw = 0d;
         this.pitch = 0d;
 
-        this.playerWalkSpeed = 20f;
+        this.playerWalkSpeed = 8f;
         this.playerTurnSpeed = 25f;
 
         renderer();
