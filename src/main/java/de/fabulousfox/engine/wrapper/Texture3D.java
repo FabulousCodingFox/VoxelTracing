@@ -31,22 +31,14 @@ public class Texture3D {
         image.put(address + 3, (byte) ((color >> 24) & 0xFF)); // Alpha component
     }
 
-    public void fill(){
-        int defaultColor = new Color(0, 0, 0, 0).getRGB();
-        int colorRed = new Color(255, 0, 0, 255).getRGB();
-        int colorGreen = new Color(0, 255, 0, 255).getRGB();
-        int colorBlue = new Color(0, 0, 255, 255).getRGB();
-        int colorWhite = new Color(255, 255, 255, 255).getRGB();
-
-        for(int x = 0; x < sizeX; x++){
-            for(int y = 0; y < sizeY; y++){
-                for(int z = 0; z < sizeZ; z++){
-                    int color = -1;
-                    if(x == 0 || x == sizeX - 1) color = color == -1 ? colorRed : colorWhite;
-                    if(y == 0 || y == sizeY - 1) color = color == -1 ? colorGreen : colorWhite;
-                    if(z == 0 || z == sizeZ - 1) color = color == -1 ? colorBlue : colorWhite;
-                    if(color == -1) color = defaultColor;
-                    setPixel(x, y, z, color);
+    public void fill() {
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
+                for (int z = 0; z < sizeZ; z++) {
+                    int r = (x == 0 || x == sizeX - 1) ? 255 : 0;
+                    int g = (y == 0 || y == sizeY - 1) ? 255 : 0;
+                    int b = (z == 0 || z == sizeZ - 1) ? 255 : 0;
+                    setPixel(x, y, z, new Color(r, g, b, 255).getRGB());
                 }
             }
         }

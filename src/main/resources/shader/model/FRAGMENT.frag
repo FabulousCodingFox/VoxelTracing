@@ -162,8 +162,5 @@ void main(){
     gBufferALBEDO = c.color * c.ao;
     gBufferNORMAL = vec3(c.normal);
     gBufferPOSITION = c.position;
-
-    float distance = c.distance;
-    float hyperbolicDepth = ((1. / distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
-    gl_FragDepth = hyperbolicDepth;
+    gl_FragDepth = ((1. / c.distance) - (1. / zNear)) / ((1. / float(zFar)) - (1. / zNear));
 }

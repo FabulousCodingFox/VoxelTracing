@@ -552,6 +552,10 @@ public class Renderer {
         glBindTexture(GL_TEXTURE_2D, lightingFramebuffer);
         SHADER_LIGHTING.setInt("gBufferLIGHTING", 13);
 
+        glActiveTexture(GL_TEXTURE14);
+        glBindTexture(GL_TEXTURE_2D, gBufferRboDepth);
+        SHADER_LIGHTING.setInt("gBufferDEPTH", 14);
+
         SHADER_POST.setVector2f("iResolution", new Vector2f(windowWidth, windowHeight));
 
         glBindVertexArray(VAO_POST);

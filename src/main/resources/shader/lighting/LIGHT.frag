@@ -26,13 +26,13 @@ void main(){
 
     vec3 lighting = vec3(0);
 
-    for(int i = 0; i < MAX_LIGHTS; i++){
+    for (int i = 0; i < MAX_LIGHTS; i++){
         float strength = lights[i].strength;
-        if(strength == 0) continue;
+        if (strength == 0) continue;
         vec3 lightPosition = lights[i].position;
         vec3 lightColor = lights[i].color;
         float dist = distance(lightPosition, gPosition);
-        if(dist > strength) continue;
+        if (dist > strength) continue;
         float value = 1.0 - (dist/strength);
         vec3 col = lightColor * value;
         lighting += col;

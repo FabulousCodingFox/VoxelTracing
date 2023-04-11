@@ -35,7 +35,7 @@ public class Model {
         this.sizeZ = sizeZ;
     }
 
-    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ){
+    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
         this(data, position, new Vector3f(0, 0, 0), sizeX, sizeY, sizeZ);
     }
 
@@ -98,6 +98,10 @@ public class Model {
     /*public static void sortModelList(Vector3f cameraPosition, List<Model> models) {
         models.sort(Comparator.comparing(model -> model.getDistance(cameraPosition, true)));
     }*/
+
+    public void addPositionOffset(Vector3f offset) {
+        position.add(offset);
+    }
 
     public static void getSortedModelLists(Vector3f cameraPosition, List<Model> models, List<Model> modelsOutside, List<Model> modelsInside) {
         for (Model model : models) {
