@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -113,15 +114,11 @@ public class VoxelLoader {
             model.syncCreateData();
             counter++;
 
-            if (counter % 100 == 0)
+            if (counter % 10 == 0)
                 System.out.println("[VOXLOADER] Loaded texture data " + counter + "/" + models.size());
         }
 
         return models;
-
-
-
-
         /*ArrayList<Model> models = new ArrayList<>();
 
         try (VoxReader reader = new VoxReader(new FileInputStream("C:/Users/fabif/IdeaProjects/VoxelTracing/src/main/resources"+ path))) {
@@ -234,13 +231,12 @@ public class VoxelLoader {
     private static int totalVoxBoxes = 0;
     private static int totalVoxBoxesCount = 0;
 
-    private static void traverseNodes(String rootfolder, Vector3f posOffset, Vector3f rotationOffset, Node thisNode, List<Model> models) throws NumberFormatException {
+    private static void traverseNodes(String rootfolder, Vector3f posOffset, Vector3f rotationOffset, Node thisNode, List<Model> models, HashMap<String, List<Model>> voxStorage) throws NumberFormatException {
         if (thisNode.getNodeType() != Node.ELEMENT_NODE) return;
         Element thisElement = (Element) thisNode;
 
         Vector3f pOffset = new Vector3f(posOffset);
         Vector3f rOffset = new Vector3f(rotationOffset);
-        int[] size = new int[3];
         String[] pOffsetString = thisElement.getAttribute("pos").split(" ");
         String[] rOffsetString = thisElement.getAttribute("rot").split(" ");
         String[] sizeString = thisElement.getAttribute("size").split(" ");
@@ -254,13 +250,8 @@ public class VoxelLoader {
             rOffset.y += Float.parseFloat(rOffsetString[1]);
             rOffset.z += Float.parseFloat(rOffsetString[2]);
         }
-        if (sizeString.length == 3) {
-            size[0] = Integer.parseInt(sizeString[0]);
-            size[1] = Integer.parseInt(sizeString[1]);
-            size[2] = Integer.parseInt(sizeString[2]);
-        }
 
-        if (thisElement.getNodeName().equalsIgnoreCase("voxbox")) {
+        /*if (thisElement.getNodeName().equalsIgnoreCase("voxbox")) {
             Texture3D texture = new Texture3D(size[0], size[1], size[2]);
             texture.fill();
             texture.create();
@@ -269,14 +260,20 @@ public class VoxelLoader {
 
             totalVoxBoxesCount++;
             System.out.println("Progress: " + totalVoxBoxesCount + "/" + totalVoxBoxes + " -> " + 100f * ((float) totalVoxBoxesCount / (float) totalVoxBoxes) + "%");
-        }
+        }*/
 
-        if (thisElement.getNodeName().equalsIgnoreCase("vox")) {
-            List<Model> voxModels = load(rootfolder + thisElement.getAttribute("file").replace("MOD/", ""));
-            for (Model model : voxModels) {
-                model.addPositionOffset(pOffset.mul(Model.VOXEL_SIZE));
+        if (thisElement.getNodeName().equalsIgnoreCase("vox") ||
+                thisElement.getNodeName().equalsIgnoreCase("voxbox") ||
+                thisElement.getNodeName().equalsIgnoreCase("instance")
+        ) {
+            String voxPath = thisElement.getAttribute("file").replace("MOD/", "");
+            if(!voxStorage.containsKey(voxPath)) {
+                voxStorage.put(voxPath, load(rootfolder + voxPath));
             }
-            models.addAll(voxModels);
+
+            for(Model mdl: voxStorage.get(voxPath)){
+                models.add(mdl.getNewCopy(pOffset.mul(Model.VOXEL_SIZE).mul(10)));
+            }
 
             totalVoxBoxesCount++;
             System.out.println("Progress: " + totalVoxBoxesCount + "/" + totalVoxBoxes + " -> " + 100f * ((float) totalVoxBoxesCount / (float) totalVoxBoxes) + "%");
@@ -284,16 +281,13 @@ public class VoxelLoader {
 
         if (thisNode.getChildNodes().getLength() != 0) {
             for (int i = 0; i < thisNode.getChildNodes().getLength(); i++) {
-                traverseNodes(rootfolder, pOffset, rOffset, thisNode.getChildNodes().item(i), models);
+                traverseNodes(rootfolder, pOffset, rOffset, thisNode.getChildNodes().item(i), models, voxStorage);
             }
         }
     }
 
     public static List<Model> loadTeardown(Vector3f spawnPoint, String pathToXML) throws ParserConfigurationException, IOException, SAXException, NumberFormatException {
         List<Model> models = new ArrayList<>();
-
-        String[] tempStringArray;
-        Node tempNode;
 
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = builder.parse(new File(pathToXML));
@@ -303,21 +297,18 @@ public class VoxelLoader {
 
         Node spawnPointNode = firstNodeListElementOrNull(doc.getElementsByTagName("spawnpoint"));
         if (spawnPointNode != null) {
-            tempNode = spawnPointNode.getAttributes().getNamedItem("pos");
-            tempStringArray = tempNode.getTextContent().split(" ");
+            Node tempNode = spawnPointNode.getAttributes().getNamedItem("pos");
+            String[] tempStringArray = tempNode.getTextContent().split(" ");
             spawnPoint.x = Float.parseFloat(tempStringArray[0]);
             spawnPoint.y = Float.parseFloat(tempStringArray[1]);
             spawnPoint.z = Float.parseFloat(tempStringArray[2]);
         }
 
-        Node worldNode = firstNodeListElementOrNull(doc.getElementsByTagName("group"));
-        if (worldNode == null) throw new RuntimeException("No world node found");
-
-        totalVoxBoxes = doc.getElementsByTagName("voxbox").getLength() + doc.getElementsByTagName("vox").getLength();
+        totalVoxBoxes = doc.getElementsByTagName("voxbox").getLength() + doc.getElementsByTagName("vox").getLength() + doc.getElementsByTagName("instance").getLength();
         totalVoxBoxesCount = 0;
 
         System.out.println("Traversing nodes... (" + totalVoxBoxes + ")");
-        traverseNodes(pathToXML.substring(0, pathToXML.lastIndexOf("/") + 1), new Vector3f(0, 0, 0), new Vector3f(0, 0, 0), worldNode, models);
+        traverseNodes(pathToXML.substring(0, pathToXML.lastIndexOf("/") + 1), new Vector3f(0, 0, 0), new Vector3f(0, 0, 0), sceneNode, models, new HashMap<>());
         System.out.println("Done traversing nodes (" + totalVoxBoxes + ")");
 
         return models;

@@ -370,7 +370,9 @@ public class Renderer {
         models = new ArrayList<>();
         Vector3f spawn = new Vector3f(0, 0, 0);
         try {
-            models.addAll(VoxelLoader.loadTeardown(spawn, "C:/Users/fabif/Documents/Teardown/mods/montagna del castello Copy/main.xml"));
+            //models.addAll(VoxelLoader.loadTeardown(spawn, "C:/Users/fabif/Documents/Teardown/mods/montagna del castello Copy/main.xml"));
+            //models.addAll(VoxelLoader.loadTeardown(spawn, "C:/Users/fabif/Documents/Teardown/mods/Super Lab (Breaking Bad) Copy/main.xml"));
+            models.addAll(VoxelLoader.loadTeardown(spawn, "C:/Users/fabif/Documents/Teardown/mods/Dust2 Copy/de_dust2.xml"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -378,6 +380,8 @@ public class Renderer {
         //models.addAll(VoxelLoader.load("/models/menger.vox"));
         //models.addAll(VoxelLoader.load("/models/castle.vox"));
         //models.addAll(VoxelLoader.load("/models/castle_full.vox"));
+
+
     }
 
     public boolean shouldClose() {

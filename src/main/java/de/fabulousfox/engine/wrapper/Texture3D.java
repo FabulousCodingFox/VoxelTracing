@@ -18,6 +18,7 @@ public class Texture3D {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
+        System.out.println("Creating texture with size " + sizeX + "x" + sizeY + "x" + sizeZ);
         this.image = BufferUtils.createByteBuffer(sizeX * sizeY * sizeZ * 4);
         BufferUtils.zeroBuffer(image);
     }
@@ -59,6 +60,8 @@ public class Texture3D {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, sizeX, sizeY, sizeZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
         glGenerateMipmap(GL_TEXTURE_3D);
+
+        image = null;
     }
 
     public int get() {

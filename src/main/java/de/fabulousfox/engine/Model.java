@@ -115,4 +115,8 @@ public class Model {
         modelsOutside.sort(Comparator.comparing(model -> model.getDistance(cameraPosition, true)));
         modelsInside.sort(Comparator.comparing(model -> model.getDistance(cameraPosition, false)));
     }
+
+    public Model getNewCopy(Vector3f positionOffset){
+        return new Model(data, new Vector3f(position).add(positionOffset), new Vector3f(rotation), sizeX, sizeY, sizeZ);
+    }
 }
