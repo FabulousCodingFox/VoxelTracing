@@ -2,6 +2,7 @@ package de.fabulousfox.engine.wrapper;
 
 import org.lwjgl.BufferUtils;
 
+import java.awt.*;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL46.*;
@@ -28,6 +29,27 @@ public class Texture3D {
         image.put(address + 1, (byte) ((color >> 8) & 0xFF));  // Green component
         image.put(address + 2, (byte) (color & 0xFF));         // Blue component
         image.put(address + 3, (byte) ((color >> 24) & 0xFF)); // Alpha component
+    }
+
+    public void fill(){
+        int defaultColor = new Color(0, 0, 0, 0).getRGB();
+        int colorRed = new Color(255, 0, 0, 255).getRGB();
+        int colorGreen = new Color(0, 255, 0, 255).getRGB();
+        int colorBlue = new Color(0, 0, 255, 255).getRGB();
+        int colorWhite = new Color(255, 255, 255, 255).getRGB();
+
+        for(int x = 0; x < sizeX; x++){
+            for(int y = 0; y < sizeY; y++){
+                for(int z = 0; z < sizeZ; z++){
+                    int color = -1;
+                    if(x == 0 || x == sizeX - 1) color = color == -1 ? colorRed : colorWhite;
+                    if(y == 0 || y == sizeY - 1) color = color == -1 ? colorGreen : colorWhite;
+                    if(z == 0 || z == sizeZ - 1) color = color == -1 ? colorBlue : colorWhite;
+                    if(color == -1) color = defaultColor;
+                    setPixel(x, y, z, color);
+                }
+            }
+        }
     }
 
     public void create() {

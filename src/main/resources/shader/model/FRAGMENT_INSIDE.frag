@@ -76,7 +76,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
-    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * .5) + .5) * deltaDist;
     vec4 voxel = vec4(0.);
     float ao = 1.;
 
@@ -86,15 +86,11 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
         voxel = getVoxelAtXYZ(mapPos.x, mapPos.y, mapPos.z);
         if (voxel.a > 0.999){
             // AO
-            vec3 intersectPlane = mapPos + vec3(lessThan(rayDir, vec3(0)));
-            vec3 endRayPos;
-            vec2 uv;
-            vec4 ambient;
-            ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
-            endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
-            vec2 aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.0)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.0))), vec2(1.0));
+            vec4 ambient = calcVoxelAo(mapPos - rayStep * ivec3(mask), vec3(mask).zxy, vec3(mask).yzx);
+            vec3 endRayPos = rayDir / sum(ivec3(mask) * rayDir) * sum(ivec3(mask) * (mapPos + vec3(lessThan(rayDir, vec3(0))) - rayPos)) + rayPos;
+            vec2 aouv = mod(vec2(dot(ivec3(mask) * endRayPos.yzx, vec3(1.)), dot(ivec3(mask) * endRayPos.zxy, vec3(1.))), vec2(1.));
             ao = mix(mix(ambient.z, ambient.w, aouv.x), mix(ambient.y, ambient.x, aouv.x), aouv.y);
-            ao = pow(ao, 1.0 / 3.0);
+            ao = pow(ao, 1. / 3.);
             break;
         }
 
@@ -103,9 +99,8 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
         mapPos += rayStep * ivec3(mask);
     }
 
-    vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
-
-    return DDAResult(voxel, mask, length(position - pos), pos, ao);
+    vec3 worldSpacePosition = modelPosition + voxelSize * (rayPos + rayDir * distance(rayPos, mapPos));
+    return DDAResult(voxel, mask, distance(worldSpacePosition, position), worldSpacePosition, ao);
 }
 
 void main(){

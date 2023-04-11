@@ -368,7 +368,13 @@ public class Renderer {
         System.out.println("Initializing World...");
 
         models = new ArrayList<>();
-        models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
+        Vector3f spawn = new Vector3f(0, 0, 0);
+        try {
+            models.addAll(VoxelLoader.loadTeardown(spawn, "C:/Users/fabif/Documents/Teardown/mods/montagna del castello Copy/main.xml"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //models.addAll(VoxelLoader.load("/models/vehicle/boat/mediumboat.vox"));
         //models.addAll(VoxelLoader.load("/models/menger.vox"));
         //models.addAll(VoxelLoader.load("/models/castle.vox"));
         //models.addAll(VoxelLoader.load("/models/castle_full.vox"));

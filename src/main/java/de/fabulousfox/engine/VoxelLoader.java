@@ -14,11 +14,21 @@ import de.fabulousfox.gvox_java.structs.GvoxRegionRange;
 import de.fabulousfox.libs.voxfileparser.*;
 import de.fabulousfox.libs.voxfileparser.chunk.VoxRGBAChunk;
 import org.joml.Vector3f;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -213,5 +223,94 @@ public class VoxelLoader {
         GVOX.close();
 
         return List.of();
+    }
+
+    private static Node firstNodeListElementOrNull(NodeList nodeList) {
+        if (nodeList.getLength() > 0) {
+            return nodeList.item(0);
+        } else {
+            return null;
+        }
+    }
+
+    private static int totalVoxBoxes = 0;
+    private static int totalVoxBoxesCount = 0;
+
+    private static void traverseNodes(Vector3f posOffset, Vector3f rotationOffset, Node thisNode, List<Model> models) throws NumberFormatException {
+        if (thisNode.getNodeType() != Node.ELEMENT_NODE) return;
+        Element thisElement = (Element) thisNode;
+
+        Vector3f pOffset = new Vector3f(posOffset);
+        Vector3f rOffset = new Vector3f(rotationOffset);
+        int[] size = new int[3];
+        String[] pOffsetString = thisElement.getAttribute("pos").split(" ");
+        String[] rOffsetString = thisElement.getAttribute("rot").split(" ");
+        String[] sizeString = thisElement.getAttribute("size").split(" ");
+        if(pOffsetString.length == 3) {
+            pOffset.x += Float.parseFloat(pOffsetString[0]);
+            pOffset.y += Float.parseFloat(pOffsetString[1]);
+            pOffset.z += Float.parseFloat(pOffsetString[2]);
+        }
+        if(rOffsetString.length == 3) {
+            rOffset.x += Float.parseFloat(rOffsetString[0]);
+            rOffset.y += Float.parseFloat(rOffsetString[1]);
+            rOffset.z += Float.parseFloat(rOffsetString[2]);
+        }
+        if(sizeString.length == 3) {
+            size[0] = Integer.parseInt(sizeString[0]);
+            size[1] = Integer.parseInt(sizeString[1]);
+            size[2] = Integer.parseInt(sizeString[2]);
+        }
+
+        if(thisElement.getNodeName().equalsIgnoreCase("voxbox")){
+            Texture3D texture = new Texture3D(size[0], size[1], size[2]);
+            texture.fill();
+            texture.create();
+
+            models.add(new Model(texture, pOffset.mul(Model.VOXEL_SIZE), rOffset, size[0], size[1], size[2]));
+
+            totalVoxBoxesCount++;
+            System.out.println("Progress: " + totalVoxBoxesCount + "/" + totalVoxBoxes + " -> " + 100f * ((float)totalVoxBoxesCount / (float)totalVoxBoxes) + "%");
+        }
+
+        if(thisNode.getChildNodes().getLength() != 0) {
+            for (int i = 0; i < thisNode.getChildNodes().getLength(); i++) {
+                traverseNodes(pOffset, rOffset, thisNode.getChildNodes().item(i), models);
+            }
+        }
+    }
+
+    public static List<Model> loadTeardown(Vector3f spawnPoint, String pathToXML) throws ParserConfigurationException, IOException, SAXException, NumberFormatException {
+        List<Model> models = new ArrayList<>();
+
+        String[] tempStringArray;
+        Node tempNode;
+
+        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = builder.parse(new File(pathToXML));
+        doc.getDocumentElement().normalize();
+
+        Node sceneNode = doc.getElementsByTagName("scene").item(0);
+
+        Node spawnPointNode = firstNodeListElementOrNull(doc.getElementsByTagName("spawnpoint"));
+        if(spawnPointNode != null) {
+            tempNode = spawnPointNode.getAttributes().getNamedItem("pos");
+            tempStringArray = tempNode.getTextContent().split(" ");
+            spawnPoint.x = Float.parseFloat(tempStringArray[0]);
+            spawnPoint.y = Float.parseFloat(tempStringArray[1]);
+            spawnPoint.z = Float.parseFloat(tempStringArray[2]);
+        }
+
+        Node worldNode = firstNodeListElementOrNull(doc.getElementsByTagName("group"));
+        if(worldNode == null) throw new RuntimeException("No world node found");
+
+        totalVoxBoxes = doc.getElementsByTagName("voxbox").getLength();
+        totalVoxBoxesCount = 0;
+
+        System.out.println("Traversing nodes... ("+totalVoxBoxes+")");
+        traverseNodes(new Vector3f(0, 0, 0), new Vector3f(0, 0, 0), worldNode, models);
+        System.out.println("Done traversing nodes ("+totalVoxBoxes+")");
+
+        return models;
     }
 }

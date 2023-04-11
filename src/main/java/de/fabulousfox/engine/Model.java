@@ -15,14 +15,16 @@ public class Model {
     private final int id;
 
     private final Vector3f position;
+    private final Vector3f rotation;
 
     private final Texture3D data;
     private final int sizeX;
     private final int sizeY;
     private final int sizeZ;
 
-    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ) {
+    public Model(Texture3D data, Vector3f position, Vector3f rotation, int sizeX, int sizeY, int sizeZ) {
         this.position = position;
+        this.rotation = rotation;
 
         this.id = idCounter;
         idCounter++;
@@ -33,6 +35,10 @@ public class Model {
         this.sizeZ = sizeZ;
     }
 
+    public Model(Texture3D data, Vector3f position, int sizeX, int sizeY, int sizeZ){
+        this(data, position, new Vector3f(0, 0, 0), sizeX, sizeY, sizeZ);
+    }
+
     public void prepareShader(Shader shader) {
         shader.setMatrix4f("model", new Matrix4f().translate(this.position));
         shader.setInt("dataContainer", 5);
@@ -40,6 +46,7 @@ public class Model {
         shader.setInt("sizeY", this.sizeY);
         shader.setInt("sizeZ", this.sizeZ);
         shader.setVector3f("modelPosition", this.position);
+        shader.setVector3f("modelRotation", this.rotation);
         shader.setFloat("voxelSize", VOXEL_SIZE);
     }
 

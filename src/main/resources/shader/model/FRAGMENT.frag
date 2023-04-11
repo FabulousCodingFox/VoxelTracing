@@ -99,12 +99,7 @@ DDAResult raycastDDA(vec3 rayPos, vec3 rayDir, bvec3 mask){
         mapPos += rayStep * ivec3(mask);
     }
 
-    //vec3 pixelPositionAbsolute = modelPosition + (rayPos + rayDir * (length(mapPos - rayPos) - 0.5)) * voxelSize;
-    //vec3 pos = modelPosition + (vec3(mapPos.x * 2, mapPos.y * 2, sizeZ) - vec3(mapPos)) * voxelSize;
-
-    // Model position + voxel position + sub-voxel ray offset
-    vec3 worldSpacePosition = modelPosition + voxelSize * mapPos;
-
+    vec3 worldSpacePosition = modelPosition + voxelSize * (rayPos + rayDir * distance(rayPos, mapPos));
     return DDAResult(voxel, mask, distance(worldSpacePosition, position), worldSpacePosition, ao);
 }
 
